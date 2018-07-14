@@ -1,5 +1,6 @@
 import click
 import ebooklib
+import re
 from ebooklib.epub import EpubReader
 from io import BytesIO
 from io import TextIOBase
@@ -28,16 +29,27 @@ def unpack(file):
 	#item = items[1]
 	#print(item.get_name())
 	#print(item.get_body_content().decode("utf-8"))
-	#print("----")		
+	#print("----")	
+	#print(strip_body_tags( item.get_body_content() ).decode("utf-8") )
 	#contents_bytestream = BytesIO(item.get_body_content())
 	#process_visible_chars(contents_bytestream)	
 
 	for item in items:
-		print(item.get_name())	
-		contents_bytestream = BytesIO(item.get_body_content())
+		print(item.get_name())
+		contents = 	strip_body_tags(item.get_body_content())
+		contents_bytestream = BytesIO(contents)
 		process_visible_chars(contents_bytestream)	
 
 	return
+
+
+def strip_body_tags(body_content: BytesIO):
+
+	body_content = body_content.decode("utf-8")
+	body_content = re.sub(r'</body>', '', body_content)
+	body_content = re.sub(r'<body.*>', '', body_content)
+	return str.encode(body_content)
+
 
 
 # write the bytestream to the filesystem
