@@ -26,7 +26,7 @@ current_file_chars = 0
 @click.argument('file')
 def unpack(file):
 
-	create_if_not_exists_output_dir(OUTPUT_PATH)
+	create_if_not_exists_output_dir(OUTPUT_PATH+XHTML_PATH)
 
 	#parse the epub contents
 	reader = EpubReader(file)
@@ -138,7 +138,7 @@ def open_new_file():
 	global current_file_chars
 
 	filename = str(VISIBLE_CHARS_PER_FILE*current_file_number)
-	filepath = OUTPUT_PATH+str(filename)+'.html'
+	filepath = OUTPUT_PATH+XHTML_PATH+str(filename)+'.html'
 	current_file_number += 1
 	current_file_to_write = open(filepath, 'wb') 	
 	current_file_chars = 0
