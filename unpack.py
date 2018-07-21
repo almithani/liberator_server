@@ -26,34 +26,32 @@ current_file_chars = 0
 @click.argument('file')
 def unpack(file):
 
-	create_if_not_exists_output_dir(OUTPUT_PATH+XHTML_PATH)
+	
 
 	#parse the epub contents
 	reader = EpubReader(file)
 	book = reader.load()
+	book_title = book.get_metadata('DC', 'title')[0][0]
+
+	#create output directories needed
+	book_output_path = OUTPUT_PATH+get_valid_filename(book_title)+'/'
+	print(book_output_path)
+	create_if_not_exists_output_dir(book_output_path+XHTML_PATH)
 
 	items = list(book.get_items())
-	#item = items[1]
-	#print(item.get_name())
-	#print(item.get_body_content().decode("utf-8"))
-	#print("----")	
-	#print(strip_body_tags( item.get_body_content() ).decode("utf-8") )
-	#contents_bytestream = BytesIO(item.get_body_content())
-	#process_visible_chars(contents_bytestream)	
-
 	for item in items:
-		print('name: '+item.get_name())
+		#print('name: '+item.get_name())
 
 		if item.get_type()==ebooklib.ITEM_DOCUMENT:
 			contents = 	strip_body_tags(item.get_body_content())
 			contents_bytestream = BytesIO(contents)
-			process_visible_chars(contents_bytestream)	
+			process_visible_chars(contents_bytestream, book_output_path)	
 
 		elif item.get_type()==ebooklib.ITEM_IMAGE or item.get_type()==ebooklib.ITEM_COVER:
-			save_file_to_output_dir( OUTPUT_PATH+IMAGE_PATH, os.path.basename(item.get_name()), item.get_content() )
+			save_file_to_output_dir( book_output_path+IMAGE_PATH, os.path.basename(item.get_name()), item.get_content() )
 
 		elif item.get_type()==ebooklib.ITEM_STYLE:
-			save_file_to_output_dir( OUTPUT_PATH+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
+			save_file_to_output_dir( book_output_path+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
 
 		else: 
 			print(item.get_type())
@@ -79,7 +77,7 @@ def strip_body_tags(body_content: BytesIO):
 
 # write the bytestream to the filesystem
 # using our chunking rules
-def process_visible_chars(byte_stream: BytesIO):
+def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 
 	global VISIBLE_CHARS_PER_FILE
 	global MARKUP_START_CHAR
@@ -88,7 +86,7 @@ def process_visible_chars(byte_stream: BytesIO):
 	global TAB_CHAR
 	global current_file_chars 
 
-	output_file = get_output_file()
+	output_file = get_output_file(book_output_path)
 	total_chars_processed = 0
 
 	in_markup_tag = False
@@ -112,7 +110,7 @@ def process_visible_chars(byte_stream: BytesIO):
 
 		#if the file is maxed out, open a new one
 		if current_file_chars >= VISIBLE_CHARS_PER_FILE:
-			output_file = get_next_output_file(output_file)
+			output_file = get_next_output_file(book_output_path, output_file )
 			current_file_chars = 0
 
 		char = byte_stream.read(1)
@@ -121,37 +119,37 @@ def process_visible_chars(byte_stream: BytesIO):
 	return
 
 
-def get_output_file():
+def get_output_file(path: str):
 
 	global current_file_to_write
 
 	if current_file_to_write is None:
-		open_new_file()
+		open_new_file(path)
 
 	return current_file_to_write
 
 
-def open_new_file():
+def open_new_file(path: str):
 
 	global current_file_to_write
 	global current_file_number
 	global current_file_chars
 
 	filename = str(VISIBLE_CHARS_PER_FILE*current_file_number)
-	filepath = OUTPUT_PATH+XHTML_PATH+str(filename)+'.html'
+	filepath = path+XHTML_PATH+str(filename)+'.html'
 	current_file_number += 1
 	current_file_to_write = open(filepath, 'wb') 	
 	current_file_chars = 0
 
 
-def get_next_output_file(current_output_file: TextIOBase=None):
+def get_next_output_file(book_output_path:str, current_output_file:TextIOBase=None):
 
 	global current_file_to_write
 
 	if current_output_file is not None:
 		current_output_file.close()
 
-	open_new_file()
+	open_new_file(book_output_path)
 
 	return current_file_to_write
 
@@ -159,6 +157,19 @@ def get_next_output_file(current_output_file: TextIOBase=None):
 def create_if_not_exists_output_dir(output_dir: str):
 	if not os.path.exists(output_dir):
 		os.makedirs(output_dir)
+
+#i "borrowed" this from Django: https://github.com/django/django/blob/master/django/utils/text.py
+def get_valid_filename(s):
+	"""
+	Return the given string converted to a string that can be used for a clean
+	filename. Remove leading and trailing spaces; convert other spaces to
+	underscores; and remove anything that is not an alphanumeric, dash,
+	underscore, or dot.
+	>>> get_valid_filename("john's portrait in 2004.jpg")
+	'johns_portrait_in_2004.jpg'
+	"""
+	s = str(s).strip().replace(' ', '_')
+	return re.sub(r'(?u)[^-\w.]', '', s)
 
 
 if __name__ == '__main__':
