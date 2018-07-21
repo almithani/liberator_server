@@ -1,11 +1,16 @@
 import click
 import ebooklib
 import re
+import os
 from ebooklib.epub import EpubReader
 from io import BytesIO
 from io import TextIOBase
 
-OUTPUT_DIR = './output/'
+OUTPUT_PATH = './output/'
+XHTML_PATH = 'xhtml/'
+IMAGE_PATH = 'image/'
+CSS_PATH = 'css/'
+
 VISIBLE_CHARS_PER_FILE = 30000
 MARKUP_START_CHAR = b'<'
 MARKUP_END_CHAR = b'>'
@@ -21,11 +26,13 @@ current_file_chars = 0
 @click.argument('file')
 def unpack(file):
 
+	create_if_not_exists_output_dir(OUTPUT_PATH)
+
 	#parse the epub contents
 	reader = EpubReader(file)
 	book = reader.load()
 
-	items = list(book.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+	items = list(book.get_items())
 	#item = items[1]
 	#print(item.get_name())
 	#print(item.get_body_content().decode("utf-8"))
@@ -35,12 +42,30 @@ def unpack(file):
 	#process_visible_chars(contents_bytestream)	
 
 	for item in items:
-		print(item.get_name())
-		contents = 	strip_body_tags(item.get_body_content())
-		contents_bytestream = BytesIO(contents)
-		process_visible_chars(contents_bytestream)	
+		print('name: '+item.get_name())
+
+		if item.get_type()==ebooklib.ITEM_DOCUMENT:
+			contents = 	strip_body_tags(item.get_body_content())
+			contents_bytestream = BytesIO(contents)
+			process_visible_chars(contents_bytestream)	
+
+		elif item.get_type()==ebooklib.ITEM_IMAGE or item.get_type()==ebooklib.ITEM_COVER:
+			save_file_to_output_dir( OUTPUT_PATH+IMAGE_PATH, os.path.basename(item.get_name()), item.get_content() )
+
+		elif item.get_type()==ebooklib.ITEM_STYLE:
+			save_file_to_output_dir( OUTPUT_PATH+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
+
+		else: 
+			print(item.get_type())
 
 	return
+
+
+def save_file_to_output_dir(output_path:str, filename:str, content: BytesIO):
+	create_if_not_exists_output_dir(output_path)
+	file = open(output_path+filename, 'wb') 
+	file.write(content)
+	file.close()
 
 
 def strip_body_tags(body_content: BytesIO):
@@ -92,7 +117,8 @@ def process_visible_chars(byte_stream: BytesIO):
 
 		char = byte_stream.read(1)
 
-	print("this file has: %i visible chars" % total_chars_processed)
+	#print("this file has: %i visible chars" % total_chars_processed)
+	return
 
 
 def get_output_file():
@@ -111,7 +137,8 @@ def open_new_file():
 	global current_file_number
 	global current_file_chars
 
-	filepath = OUTPUT_DIR+'a'+str(current_file_number)+'.html'
+	filename = str(VISIBLE_CHARS_PER_FILE*current_file_number)
+	filepath = OUTPUT_PATH+str(filename)+'.html'
 	current_file_number += 1
 	current_file_to_write = open(filepath, 'wb') 	
 	current_file_chars = 0
@@ -127,6 +154,11 @@ def get_next_output_file(current_output_file: TextIOBase=None):
 	open_new_file()
 
 	return current_file_to_write
+
+
+def create_if_not_exists_output_dir(output_dir: str):
+	if not os.path.exists(output_dir):
+		os.makedirs(output_dir)
 
 
 if __name__ == '__main__':
