@@ -35,8 +35,8 @@ def unpack(file):
 
 	#create output directories needed
 	book_output_path = OUTPUT_PATH+get_valid_filename(book_title)+'/'
-	print(book_output_path)
 	create_if_not_exists_output_dir(book_output_path+XHTML_PATH)
+	print('Extracting to: '+book_output_path)
 
 	items = list(book.get_items())
 	for item in items:
@@ -54,7 +54,8 @@ def unpack(file):
 			save_file_to_output_dir( book_output_path+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
 
 		else: 
-			print(item.get_type())
+			#print(item.get_type())
+			pass
 
 	return
 
@@ -72,7 +73,6 @@ def strip_body_tags(body_content: BytesIO):
 	body_content = re.sub(r'</body>', '', body_content)
 	body_content = re.sub(r'<body.*>', '', body_content)
 	return str.encode(body_content)
-
 
 
 # write the bytestream to the filesystem
