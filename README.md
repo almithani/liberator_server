@@ -9,7 +9,7 @@ I'll be using openresty to serve the generated files.  They have a docker image,
 ```
 docker pull openresty/openresty:stretch-fat
 docker image ls
-docker run -d -p 80:80 --name openresty openresty/openresty:stretch-fat
+docker run -d -p 80:80 --mount type=bind,source=/Users/almithani/projects/liberator/server/output/,target=/usr/local/openresty/nginx/html  --name openresty openresty/openresty:stretch-fat
 docker container stop openresty
 docker container rm openresty
 ```
