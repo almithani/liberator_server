@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+		<title>Liberator - Read Books online</title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<link rel="stylesheet" href="css/reset.css">
+
+		<script src="./js/app.js"></script>
+
+	</head>
+
+
+	<body>
+
+		<div id="book">			
+		</div>
+
+		<script type="text/javascript">
+			window.onload = function() {
+				const lib = new liberator_client();
+				
+				lib.getBookStylesheet().then( function(styles) {
+					styleEl = document.createElement('style');
+					styleEl.innerHTML = styles;
+					document.getElementById("book").appendChild(styleEl);
+				});
+
+				lib.getBookContent().then( function(content) {
+					bookContentEl = document.createElement('div');
+					bookContentEl.innerHTML = content
+					document.getElementById("book").appendChild(bookContentEl);
+				});
+			}
+		</script>
+
+	</body>
+
+
+</html>
