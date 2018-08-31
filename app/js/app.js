@@ -8,6 +8,7 @@ class liberator_book_app {
 
 	constructor(targetElementId){ 
 		this.bookEl = document.getElementById(targetElementId);
+		this.pages = Array();
 	}
 
 	init() {
@@ -20,6 +21,7 @@ class liberator_book_app {
 		});
 
 		lib.getBookContent().then( (content) => {
+			this.processCharacters(content);
 			var bookContentEl = document.createElement('div');
 			bookContentEl.innerHTML = content
 			this.bookEl.appendChild(bookContentEl);
@@ -29,7 +31,11 @@ class liberator_book_app {
 	}
 
 	processCharacters(pageContent) {
+		var pageObject = {
+			content: pageContent
+		}
 
+		this.pages.push(pageObject);
 	}
 
 	scrollEventHandler(e) {
