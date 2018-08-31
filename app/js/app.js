@@ -6,8 +6,8 @@
 */
 class liberator_book_app {
 
-	constructor(_targetElementId){ 
-		this.bookEl = document.getElementById("book");
+	constructor(targetElementId){ 
+		this.bookEl = document.getElementById(targetElementId);
 	}
 
 	init() {
@@ -28,7 +28,14 @@ class liberator_book_app {
 		this.bookEl.onscroll = this.scrollEventHandler;
 	}
 
+	processCharacters(pageContent) {
+
+	}
+
 	scrollEventHandler(e) {
+
+		var bookEl = e.target;
+
 		var viewableHeight = bookEl.clientHeight;
 		var contentHeight = bookEl.scrollHeight;
 		var totalScrolled = bookEl.scrollTop;
