@@ -69,6 +69,7 @@ class liberator_book_app {
 
 	loadNextPage() {
 		this.curPageNum++;
+		var appInstance = this;
 
 		this.lib.getPage(this.curPageNum).then( (content) => {
 			this.processCharacters(content);
@@ -77,6 +78,10 @@ class liberator_book_app {
 			this.bookEl.appendChild(bookContentEl);
 
 			this.isLoadingPage = false;
+		})
+		.catch( function(error) {
+			console.log('error loading next page');
+			appInstance.curPageNum--;
 		});	
 	}
 }
@@ -101,6 +106,7 @@ class liberator_client {
 		})
 		.catch(function(error) {
 			console.log(error)
+			throw error;
 		});
 	}
 
