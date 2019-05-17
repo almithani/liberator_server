@@ -24,3 +24,9 @@ Note the port change in the docker command...the exposed docker port MUST match 
 ```
 docker run -d -p 8080:8080 --mount type=bind,source=/Users/almithani/projects/liberator/server/nginx/conf/nginx.conf,target=/usr/local/openresty/nginx/conf/nginx.conf  --name openresty openresty/openresty:stretch-fat
 ```
+
+## restarting openresty
+It's just like nginx:
+```
+service openresty restart
+```

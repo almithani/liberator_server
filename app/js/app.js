@@ -12,8 +12,8 @@ class liberator_book_app {
 		this.bookEl = document.getElementById(targetElementId);
 		this.pages = Array();
 		this.curPageNum = 0;
-		this.bookURL = 'http://localhost/The_Big_Picture/xhtml/';
-		this.cssURL = 'http://localhost/The_Big_Picture/css/idGeneratedStyles.css';
+		this.bookURL = 'http://68.183.192.73:8080/The_Big_Picture/xhtml/';
+		this.cssURL = 'http://68.183.192.73:8080/The_Big_Picture/css/idGeneratedStyles.css';
 
 		this.lib = new liberator_client(this.bookURL);
 
