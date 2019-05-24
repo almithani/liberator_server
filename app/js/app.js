@@ -10,6 +10,7 @@ class liberator_book_app {
 
 	constructor(targetElementId){ 
 		this.bookEl = document.getElementById(targetElementId);
+		this.bookContentEl = null;	//we will set this in the init
 		this.pages = Array();
 		this.curPageNum = 0;
 		this.bookURL = 'http://68.183.192.73:8080/The_Big_Picture/xhtml/';
@@ -26,6 +27,14 @@ class liberator_book_app {
 			var styleEl = document.createElement('style');
 			styleEl.innerHTML = styles;
 			this.bookEl.appendChild(styleEl);
+
+			/*
+				Because of the viewport sizing of bookEl, we need this content
+					element so the child HTML style doesn't get messed up
+			*/
+			this.bookContentEl = document.createElement('div');
+			this.bookContentEl.id = "liberator-content";
+			this.bookEl.appendChild(this.bookContentEl);
 		});
 
 		this.loadNextPage();
@@ -73,9 +82,7 @@ class liberator_book_app {
 
 		this.lib.getPage(this.curPageNum).then( (content) => {
 			this.processCharacters(content);
-			var bookContentEl = document.createElement('div');
-			bookContentEl.innerHTML = content
-			this.bookEl.appendChild(bookContentEl);
+			this.bookContentEl.innerHTML += content;
 
 			this.isLoadingPage = false;
 		})
@@ -96,8 +103,12 @@ class liberator_client {
 		this.bookRootURL = bookURL;
 	}
 
+	getCharOfPage(pageNum) {
+		return (pageNum - 1) * CHARS_PER_PAGE;
+	}
+
 	getPage(pageNum) {
-		var charOfPage = (pageNum - 1) * CHARS_PER_PAGE;
+		var charOfPage = this.getCharOfPage(pageNum);
 
 		return fetch(this.bookRootURL+charOfPage+'.html')
 		.then( resp => resp.text() )
