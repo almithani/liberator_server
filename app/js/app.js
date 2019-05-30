@@ -54,26 +54,28 @@ class liberator_book_app {
 		var appInstance = this;
 
 		appInstance.bookEl.onscroll = function(e) {
-			//don't bother handling this event if it's already being handled.
-			if ( appInstance.isLoadingPage ) return false;
-
-			var bookEl = e.target;
-
-			var viewableHeight = bookEl.clientHeight;
-			var contentHeight = bookEl.scrollHeight;
-			var totalScrolled = bookEl.scrollTop;
-
-			var heightLeft = contentHeight - totalScrolled - viewableHeight;
-			
-			//this is a percent that we use to decide to load the next 'page'
-			var NEXT_PAGE_LOAD_THRESHOLD = 1000; 
-
-
-			if ( heightLeft <= NEXT_PAGE_LOAD_THRESHOLD ) {
-				appInstance.isLoadingPage = true;
-				appInstance.loadNextPage();
-			}
+			appInstance.loadNextPageIfRequired();
 		}
+	}
+
+	loadNextPageIfRequired() {
+		//don't bother handling this event if it's already being handled.
+		if ( this.isLoadingPage ) return false;
+
+		var viewableHeight = this.bookEl.clientHeight;
+		var contentHeight = this.bookEl.scrollHeight;
+		var totalScrolled = this.bookEl.scrollTop;
+
+		var heightLeft = contentHeight - totalScrolled - viewableHeight;
+		
+		//this is a percent that we use to decide to load the next 'page'
+		var NEXT_PAGE_LOAD_THRESHOLD = 1000; 
+
+
+		if ( heightLeft <= NEXT_PAGE_LOAD_THRESHOLD ) {
+			this.isLoadingPage = true;
+			this.loadNextPage();
+		}		
 	}
 
 	loadNextPage() {
@@ -83,6 +85,9 @@ class liberator_book_app {
 		this.lib.getPage(this.curPageNum).then( (content) => {
 			this.processCharacters(content);
 			this.bookContentEl.innerHTML += content;
+
+			//this actually triggers a reflow, so be careful
+			//console.log(this.bookContentEl.innerText.length)
 
 			this.isLoadingPage = false;
 		})
