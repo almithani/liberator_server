@@ -11,6 +11,7 @@ class liberator_book_app {
 	constructor(targetElementId){ 
 		this.bookEl = document.getElementById(targetElementId);
 		this.bookContentEl = null;	//we will set this in the init
+		this.bookmarkInterval = null; //we will set this up in the init
 		this.pages = Array();
 		this.curPageNum = 0;
 		this.bookURL = 'http://68.183.192.73:8080/The_Big_Picture/xhtml/';
@@ -22,6 +23,8 @@ class liberator_book_app {
 	}
 
 	init() {
+
+
 		
 		this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
 			var styleEl = document.createElement('style');
@@ -35,10 +38,11 @@ class liberator_book_app {
 			this.bookContentEl = document.createElement('div');
 			this.bookContentEl.id = "liberator-content";
 			this.bookEl.appendChild(this.bookContentEl);
-		});
 
-		this.loadNextPage();
-		this.setUpScrollEventHandler();
+			this.loadNextPage();
+			this.setUpScrollEventHandler();
+			this.setUpBookmarkingInterval();
+		});
 	}
 
 	processCharacters(pageContent) {
@@ -56,6 +60,27 @@ class liberator_book_app {
 		appInstance.bookEl.onscroll = function(e) {
 			appInstance.loadNextPageIfRequired();
 		}
+	}
+
+	//PRE: this.bookContentEl needs to have already been created (see order in init)
+	setUpBookmarkingInterval() {
+		var charCounterFunc = this.updateCharCounter;
+		var bookContentEl = this.bookContentEl;
+		this.bookmarkInterval = setInterval( function(){ charCounterFunc(bookContentEl); }, 5000);
+	}
+
+	updateCharCounter(targetEl) {
+		var charIterator = document.createNodeIterator(targetEl, NodeFilter.SHOW_ELEMENT);
+		var curNode = charIterator.root;
+		var prevNode = null;
+
+		while(!curNode.offsetTop || (curNode.offsetTop < book.scrollTop) ) {
+			prevNode = curNode
+			curNode = charIterator.nextNode();
+		}
+
+		//POST: prevNode is where we'd like to bookmark 
+		console.log(prevNode)
 	}
 
 	loadNextPageIfRequired() {
@@ -83,10 +108,12 @@ class liberator_book_app {
 		var appInstance = this;
 
 		this.lib.getPage(this.curPageNum).then( (content) => {
+			//do i actually need the line below?  Doesn't seem to do anything
 			this.processCharacters(content);
 			this.bookContentEl.innerHTML += content;
 
 			//this actually triggers a reflow, so be careful
+			//https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
 			//console.log(this.bookContentEl.innerText.length)
 
 			this.isLoadingPage = false;
