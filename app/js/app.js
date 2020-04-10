@@ -23,9 +23,6 @@ class liberator_book_app {
 	}
 
 	init() {
-
-
-		
 		this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
 			var styleEl = document.createElement('style');
 			styleEl.innerHTML = styles;
@@ -39,10 +36,15 @@ class liberator_book_app {
 			this.bookContentEl.id = "liberator-content";
 			this.bookEl.appendChild(this.bookContentEl);
 
-			this.loadNextPage();
-			this.setUpScrollEventHandler();
-			this.setUpBookmarkingInterval();
+			var appInstance = this;
+			this.loadNextPage( function(){ appInstance.initInteractive() });
 		});
+	}
+
+	initInteractive() {
+		this.setUpScrollEventHandler();
+		this.loadBookmarkIfExists();
+		this.setUpBookmarkingInterval();
 	}
 
 	processCharacters(pageContent) {
@@ -54,12 +56,37 @@ class liberator_book_app {
 	}
 
 	setUpScrollEventHandler() {
-		
 		var appInstance = this;
-
 		appInstance.bookEl.onscroll = function(e) {
-			appInstance.loadNextPageIfRequired();
+			//appInstance.loadNextPageIfRequired();
 		}
+	}
+
+	//"borrowed" from here: https://stackoverflow.com/a/49224652
+	getCookie(name) {
+		let cookie = {};
+		document.cookie.split(';').forEach(function(el) {
+			let [k,v] = el.split('=');
+			cookie[k.trim()] = v;
+		})
+		return cookie[name];
+	}
+
+	loadBookmarkIfExists() {
+		var bookmarkedChar = this.getCookie("curChar");
+		console.log(bookmarkedChar)
+
+		var charIterator = document.createNodeIterator(this.bookContentEl, NodeFilter.SHOW_ELEMENT);
+		var curNode = charIterator.nextNode(); //this gives us the root node
+		var curChar = 0;
+
+		while( curChar < bookmarkedChar ) {
+			curNode = charIterator.nextNode();
+			curChar += curNode.textContent.trim().length;
+		}
+
+		//TODO: change book to something a little more permanent
+		book.scrollTop = curNode.offsetTop
 	}
 
 	//PRE: this.bookContentEl needs to have already been created (see order in init)
@@ -71,16 +98,24 @@ class liberator_book_app {
 
 	updateCharCounter(targetEl) {
 		var charIterator = document.createNodeIterator(targetEl, NodeFilter.SHOW_ELEMENT);
-		var curNode = charIterator.root;
+		var curNode = charIterator.nextNode(); //this gives us the root node
+		curNode = charIterator.nextNode(); //this gives us the first child
 		var prevNode = null;
+		var charCount = 0;
 
+		//TODO: change book to something a little more permanent
 		while(!curNode.offsetTop || (curNode.offsetTop < book.scrollTop) ) {
+			charCount += curNode.textContent.trim().length;
 			prevNode = curNode
 			curNode = charIterator.nextNode();
 		}
 
 		//POST: prevNode is where we'd like to bookmark 
 		console.log(prevNode)
+		console.log(prevNode.textContent.length)
+		console.log(charCount)
+
+		document.cookie = "curChar="+charCount;
 	}
 
 	loadNextPageIfRequired() {
@@ -103,7 +138,7 @@ class liberator_book_app {
 		}		
 	}
 
-	loadNextPage() {
+	loadNextPage(callback) {
 		this.curPageNum++;
 		var appInstance = this;
 
@@ -112,11 +147,10 @@ class liberator_book_app {
 			this.processCharacters(content);
 			this.bookContentEl.innerHTML += content;
 
-			//this actually triggers a reflow, so be careful
-			//https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
-			//console.log(this.bookContentEl.innerText.length)
-
 			this.isLoadingPage = false;
+			if( callback!=null ) {
+				callback();
+			}
 		})
 		.catch( function(error) {
 			console.log('error loading next page');
