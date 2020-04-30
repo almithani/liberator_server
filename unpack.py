@@ -14,7 +14,6 @@ CSS_PATH = 'css/'
 VISIBLE_CHARS_PER_FILE = 30000
 MARKUP_START_CHAR = b'<'
 MARKUP_END_CHAR = b'>'
-SPACE_CHAR = b' '
 TAB_CHAR = b'	'
 
 # the stateful params below are used for continuity between bytestreams
@@ -43,7 +42,7 @@ def unpack(file):
 		#print('name: '+item.get_name())
 
 		if item.get_type()==ebooklib.ITEM_DOCUMENT:
-			contents = 	strip_body_tags(item.get_body_content())
+			contents = 	strip_unwanted_tags(item.get_body_content())
 			contents_bytestream = BytesIO(contents)
 			process_visible_chars(contents_bytestream, book_output_path)	
 
@@ -67,11 +66,14 @@ def save_file_to_output_dir(output_path:str, filename:str, content: BytesIO):
 	file.close()
 
 
-def strip_body_tags(body_content: BytesIO):
+def strip_unwanted_tags(body_content: BytesIO):
 
 	body_content = body_content.decode("utf-8")
 	body_content = re.sub(r'</body>', '', body_content)
 	body_content = re.sub(r'<body.*>', '', body_content)
+	body_content = re.sub(r'&#13;', '', body_content)
+	#body_content = re.sub(r'\t', '', body_content)
+	#body_content = re.sub(r'\n', '', body_content)
 	return str.encode(body_content)
 
 
@@ -82,7 +84,6 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 	global VISIBLE_CHARS_PER_FILE
 	global MARKUP_START_CHAR
 	global MARKUP_END_CHAR
-	global SPACE_CHAR
 	global TAB_CHAR
 	global current_file_chars 
 
@@ -93,15 +94,20 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 	char = byte_stream.read(1)
 	while char:
 
+		#don't include tabs, they make the browser add more "fixup" markup
+		#if char == TAB_CHAR:
+		#	char = byte_stream.read(1)
+		#	continue
+
+		output_file.write(char)
+
 		# determine whether or not we're in markup tags
 		if char == MARKUP_START_CHAR:
 			in_markup_tag = True
 		elif char == MARKUP_END_CHAR:
 			in_markup_tag = False
-
-		#write to file and adjust our counters
-		if char != TAB_CHAR:
-			output_file.write(char)
+			char = byte_stream.read(1)
+			continue
 
 		if not in_markup_tag:
 			#print(char.decode("ISO-8859-1"), end="", flush=True)
