@@ -76,45 +76,84 @@ class liberator_book_app {
 		var bookmarkedChar = this.getCookie("curChar");
 		console.log(bookmarkedChar)
 
-		var charIterator = document.createNodeIterator(this.bookContentEl, NodeFilter.SHOW_ELEMENT);
-		var curNode = charIterator.nextNode(); //this gives us the root node
-		var curChar = 0;
-
-		while( curChar < bookmarkedChar ) {
-			curNode = charIterator.nextNode();
-			curChar += curNode.textContent.trim().length;
+		var firstParent = this.bookContentEl.firstChild;
+		var curParent = firstParent;
+		var parentList = []
+		while( curParent ) {
+			parentList.push(curParent);
+			curParent = curParent.nextSibling;
 		}
+		//POST: parentList contains the nodes in the first level of children of this.bookContentEl
 
-		//TODO: change book to something a little more permanent
-		book.scrollTop = curNode.offsetTop
+		console.log(parentList)
+
+		var charCount = 0;
+		var bookmarkedParent = firstParent;
+		for( let x=0; x<parentList.length; x++ ) {
+			var curParent = parentList[x];
+			charCount += curParent.textContent.length;
+			if( charCount >= bookmarkedChar && x>0 ) {
+				bookmarkedParent = parentList[x];
+				break;
+			}
+		}
+		console.log(bookmarkedParent)
+
+		//offsetTop seems to not be defined for text nodes...
+		this.bookEl.scrollTop = bookmarkedParent.offsetTop;
 	}
 
 	//PRE: this.bookContentEl needs to have already been created (see order in init)
 	setUpBookmarkingInterval() {
-		var charCounterFunc = this.updateCharCounter;
-		var bookContentEl = this.bookContentEl;
-		this.bookmarkInterval = setInterval( function(){ charCounterFunc(bookContentEl); }, 5000);
+		var appInstance = this;
+		this.bookmarkInterval = setInterval( function(){ 
+			appInstance.updateCharCounter(); 
+		}, 5000);
 	}
 
-	updateCharCounter(targetEl) {
-		var charIterator = document.createNodeIterator(targetEl, NodeFilter.SHOW_ELEMENT);
+	updateCharCounter() {
+		var charIterator = document.createNodeIterator(this.bookContentEl, NodeFilter.SHOW_ELEMENT);
 		var curNode = charIterator.nextNode(); //this gives us the root node
 		curNode = charIterator.nextNode(); //this gives us the first child
-		var prevNode = null;
-		var charCount = 0;
+		var bookmarkNode = null;
 
-		//TODO: change book to something a little more permanent
-		while(!curNode.offsetTop || (curNode.offsetTop < book.scrollTop) ) {
-			charCount += curNode.textContent.trim().length;
-			prevNode = curNode
+		while(!curNode.offsetTop || (curNode.offsetTop < this.bookEl.scrollTop) ) {
+			bookmarkNode = curNode;
 			curNode = charIterator.nextNode();
 		}
+		//POST: bookmarkNode is where we'd like to bookmark 
 
-		//POST: prevNode is where we'd like to bookmark 
-		console.log(prevNode)
-		console.log(prevNode.textContent.length)
-		console.log(charCount)
+		var curParent = this.bookContentEl.firstChild;
+		var parentList = []
+		while( curParent ) {
+			parentList.push(curParent);
+			curParent = curParent.nextSibling;
+		}
+		//POST: parentList contains the nodes in the first level of children of this.bookContentEl
 
+		var bookmarkParent = bookmarkNode;
+		var bookmarkNodeDepth = 1;
+		while( !parentList.includes(bookmarkParent) ) {
+			bookmarkParent = bookmarkParent.parentNode;
+			bookmarkNodeDepth++;
+		}
+		//POST: bookmarkParent is the top-level ancestor of bookmarkNode
+
+		//count the chars
+		var charCount = 0;
+		for( let x=0; x<parentList.length; x++ ) {
+			curParent = parentList[x];
+			if(curParent != bookmarkParent) {
+				charCount += curParent.textContent.length;
+				//console.log(charCount)
+				continue;
+			} 
+
+			//TODO: here's where we get wordcounts interior to bookmarkParent
+			break;
+		}
+
+		console.log('bookmarking at char: '+charCount);
 		document.cookie = "curChar="+charCount;
 	}
 
