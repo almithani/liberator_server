@@ -44,7 +44,9 @@ class liberator_book_app {
 		this.setUpScrollEventHandler();
 		this.bookmarker = new liberator_bookmarker(this.bookContentEl);
 
+		//TODO: make the line below not "time-sensitive"
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
+		console.log(curBookmarkOffset);
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
@@ -147,13 +149,15 @@ class liberator_bookmarker {
 		var bookmarkedParent = firstParent;
 		for( let x=0; x<parentList.length; x++ ) {
 			var curParent = parentList[x];
+
 			charCount += curParent.textContent.length;
-			if( charCount >= bookmarkedChar && x>0 ) {
-				bookmarkedParent = parentList[x];
+			if( charCount > bookmarkedChar ) {
+				bookmarkedParent = curParent;
 				break;
 			}
 		}
 		console.log(bookmarkedParent)
+		console.log(bookmarkedParent.offsetTop)
 
 		//offsetTop seems to not be defined for text nodes...
 		// TODO: fix this
@@ -207,6 +211,7 @@ class liberator_bookmarker {
 		}
 
 		console.log('bookmarking at char: '+charCount);
+		console.log(curParent)
 		document.cookie = this.BOOKMARK_COOKIE_NAME+"="+charCount;
 	}
 
