@@ -143,7 +143,7 @@ class liberator_bookmarker {
 		}
 		//POST: parentList contains the nodes in the first level of children of this.bookContentEl
 
-		console.log(parentList)
+		//console.log(parentList)
 
 		var charCount = 0;
 		var bookmarkedParent = firstParent;
@@ -156,8 +156,6 @@ class liberator_bookmarker {
 				break;
 			}
 		}
-		console.log(bookmarkedParent)
-		console.log(bookmarkedParent.offsetTop)
 
 		//offsetTop seems to not be defined for text nodes...
 		// TODO: fix this
@@ -180,21 +178,26 @@ class liberator_bookmarker {
 		}
 		//POST: bookmarkNode is where we'd like to bookmark 
 
+		/*
+			Since this.contentEl.children wouldn't include the text nodes that are auto-rendered,
+				we have to manually construct our parent list
+		*/
 		var curParent = this.contentEl.firstChild;
 		var parentList = []
+		var ancestorList = []
 		while( curParent ) {
 			parentList.push(curParent);
 			curParent = curParent.nextSibling;
 		}
-		//POST: parentList contains the nodes in the first level of children of this.contentEl
+		//POST: parentList contains the nodes (incl text nodes) in the 1st level of children of this.contentEl
 
-		var bookmarkParent = bookmarkNode;
-		var bookmarkNodeDepth = 1;
+		var bookmarkParent = bookmarkNode.parentNode;
 		while( !parentList.includes(bookmarkParent) ) {
+			ancestorList.push(bookmarkParent);
 			bookmarkParent = bookmarkParent.parentNode;
-			bookmarkNodeDepth++;
 		}
 		//POST: bookmarkParent is the top-level ancestor of bookmarkNode
+		//POST: ancestorList contains ancestors btw bookmarkParent and bookmarkNode
 
 		//count the chars
 		var charCount = 0;
@@ -206,14 +209,31 @@ class liberator_bookmarker {
 				continue;
 			} 
 
-			//TODO: here's where we get wordcounts interior to bookmarkParent
 			break;
 		}
+		//POST: curParent == bookmarkParent, charCount does not contain bookmarkParent text
+
+		console.log(charCount);
+		console.log(ancestorList);
+
+		/*
+			bookmarkParent.children only returns the direct children, so I have to use ancestorList
+				to determine where to traverse
+
+			TODO: edit the loop below to consume ancestorList
+		*/
+		for( let x=0; x<bookmarkParent.children.length; x++) {
+			var curChild = bookmarkParent.children[x];
+			break;
+		}
+		//POST: charCount includes all chars before bookmarkNode 
 
 		console.log('bookmarking at char: '+charCount);
 		console.log(curParent)
+		console.log(bookmarkNode)
 		document.cookie = this.BOOKMARK_COOKIE_NAME+"="+charCount;
 	}
+
 
 
 	//"borrowed" from here: https://stackoverflow.com/a/49224652
