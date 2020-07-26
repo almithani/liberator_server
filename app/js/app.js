@@ -188,51 +188,22 @@ class liberator_bookmarker {
 
 		console.log("offset to bookmark: "+bookmarkNode.offsetTop);
 
-		/*
-			Since this.contentEl.children wouldn't include the text nodes that are auto-rendered,
-				we have to manually construct our parent list
-		*/
-		var curParent = this.contentEl.firstChild;
-		var parentList = []
-		var ancestorList = []
-		while( curParent ) {
-			parentList.push(curParent);
-			curParent = curParent.nextSibling;
+		var curParent = bookmarkNode;
+		var ancestorList = [];
+		while( curParent != this.contentEl ) {
+			ancestorList.push(curParent);
+			curParent = curParent.parentNode;
 		}
-		//POST: parentList contains the nodes (incl text nodes) in the 1st level of children of this.contentEl
+		//POST: ancestorList contains ancestors of bookmarkNode
 
-		var bookmarkParent = bookmarkNode.parentNode;
-		while( !parentList.includes(bookmarkParent) ) {
-			ancestorList.push(bookmarkParent);
-			bookmarkParent = bookmarkParent.parentNode;
-		}
-		//POST: bookmarkParent is the top-level ancestor of bookmarkNode
-		//POST: ancestorList contains ancestors btw bookmarkParent and bookmarkNode
-
-		//count the chars up to excluding bookmarkParent
 		var charCount = 0;
-		for( let x=0; x<parentList.length; x++ ) {
-			curParent = parentList[x];
-			if(curParent != bookmarkParent) {
-				charCount += curParent.textContent.length;
-				//console.log(charCount)
-				continue;
-			} 
-
-			break;
-		}
-		//POST: curParent == bookmarkParent, charCount does not contain bookmarkParent text
-
-		/*
-			Traverse partial nodes to get an accurate char count
-		*/
 		var childIterator = 0;
-		var traversalNode = bookmarkParent;
+		var traversalNode = this.contentEl;//bookmarkParent;
 		var curChild = traversalNode.children[childIterator];
 		while(true) {
 			if( curChild == bookmarkNode ) {
 				//if it's our bookmark node, we're done
-				break
+				break;
 			} else if ( !ancestorList.includes(curChild) ) {
 				//if the node is not an ancestor, just include all text and move to next sibling
 				charCount += curChild.textContent.length;
@@ -251,8 +222,6 @@ class liberator_bookmarker {
 
 		console.log(bookmarkNode);
 		console.log('bookmarking at char: '+charCount);
-		//console.log(curParent)
-		//console.log(bookmarkNode)
 		document.cookie = this.BOOKMARK_COOKIE_NAME+"="+charCount;
 	}
 
