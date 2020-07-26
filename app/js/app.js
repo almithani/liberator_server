@@ -46,7 +46,7 @@ class liberator_book_app {
 
 		//TODO: make the line below not "time-sensitive"
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
-		console.log(curBookmarkOffset);
+		console.log("retrieved bookmark offset: "+curBookmarkOffset);
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
@@ -132,35 +132,43 @@ class liberator_bookmarker {
 
 	getBookmarkOffset() {
 		var bookmarkedChar = this.getCookie(this.BOOKMARK_COOKIE_NAME);
-		console.log(bookmarkedChar)
-
-		var firstParent = this.contentEl.firstChild;
-		var curParent = firstParent;
-		var parentList = []
-		while( curParent ) {
-			parentList.push(curParent);
-			curParent = curParent.nextSibling;
-		}
-		//POST: parentList contains the nodes in the first level of children of this.bookContentEl
-
-		//console.log(parentList)
+		console.log("retrieved bookmark char: "+bookmarkedChar)
 
 		var charCount = 0;
-		var bookmarkedParent = firstParent;
-		for( let x=0; x<parentList.length; x++ ) {
-			var curParent = parentList[x];
-
-			charCount += curParent.textContent.length;
-			if( charCount > bookmarkedChar ) {
-				bookmarkedParent = curParent;
+		var childIterator = 0;
+		var traversalNode = this.contentEl;
+		var curChild = traversalNode.children[childIterator];
+		while(true) {
+			if ( charCount+curChild.textContent.length==bookmarkedChar ) {
+				//we have the node!
 				break;
+			} else if ( charCount+curChild.textContent.length > bookmarkedChar ) {
+				//we've gone past the target node, drop traversal down into this node
+				childIterator = 0;
+				traversalNode = curChild;
+				var prevChild = curChild;
+				curChild = traversalNode.children[childIterator];
+
+				if(curChild == undefined) {
+					//error case to account for small inaccuracies
+					curChild = prevChild;
+					break;
+				}
+				continue;
+			} else {
+				//we haven't yet passed our node
+				charCount += curChild.textContent.length;
+				childIterator++;
+				curChild = traversalNode.children[childIterator];
+				continue;
 			}
 		}
+		//POST: curChild is the node we want to scroll to
 
 		//offsetTop seems to not be defined for text nodes...
 		// TODO: fix this
-		if( bookmarkedParent.offsetTop ) {
-			return bookmarkedParent.offsetTop
+		if( curChild.offsetTop ) {
+			return curChild.offsetTop
 		}
 
 		return 0;
@@ -177,6 +185,8 @@ class liberator_bookmarker {
 			curNode = charIterator.nextNode();
 		}
 		//POST: bookmarkNode is where we'd like to bookmark 
+
+		console.log("offset to bookmark: "+bookmarkNode.offsetTop);
 
 		/*
 			Since this.contentEl.children wouldn't include the text nodes that are auto-rendered,
@@ -199,7 +209,7 @@ class liberator_bookmarker {
 		//POST: bookmarkParent is the top-level ancestor of bookmarkNode
 		//POST: ancestorList contains ancestors btw bookmarkParent and bookmarkNode
 
-		//count the chars
+		//count the chars up to excluding bookmarkParent
 		var charCount = 0;
 		for( let x=0; x<parentList.length; x++ ) {
 			curParent = parentList[x];
@@ -213,24 +223,36 @@ class liberator_bookmarker {
 		}
 		//POST: curParent == bookmarkParent, charCount does not contain bookmarkParent text
 
-		console.log(charCount);
-		console.log(ancestorList);
-
 		/*
-			bookmarkParent.children only returns the direct children, so I have to use ancestorList
-				to determine where to traverse
-
-			TODO: edit the loop below to consume ancestorList
+			Traverse partial nodes to get an accurate char count
 		*/
-		for( let x=0; x<bookmarkParent.children.length; x++) {
-			var curChild = bookmarkParent.children[x];
-			break;
+		var childIterator = 0;
+		var traversalNode = bookmarkParent;
+		var curChild = traversalNode.children[childIterator];
+		while(true) {
+			if( curChild == bookmarkNode ) {
+				//if it's our bookmark node, we're done
+				break
+			} else if ( !ancestorList.includes(curChild) ) {
+				//if the node is not an ancestor, just include all text and move to next sibling
+				charCount += curChild.textContent.length;
+				childIterator++;
+				curChild = traversalNode.children[childIterator];
+				continue;
+			} else {
+				//if the node is an ancestor, traverse its children
+				childIterator = 0;
+				traversalNode = curChild;
+				curChild = traversalNode.children[childIterator];
+				continue;
+			}
 		}
 		//POST: charCount includes all chars before bookmarkNode 
 
+		console.log(bookmarkNode);
 		console.log('bookmarking at char: '+charCount);
-		console.log(curParent)
-		console.log(bookmarkNode)
+		//console.log(curParent)
+		//console.log(bookmarkNode)
 		document.cookie = this.BOOKMARK_COOKIE_NAME+"="+charCount;
 	}
 
