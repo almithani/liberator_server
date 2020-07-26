@@ -46,7 +46,6 @@ class liberator_book_app {
 
 		//TODO: make the line below not "time-sensitive"
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
-		console.log("retrieved bookmark offset: "+curBookmarkOffset);
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
@@ -61,7 +60,7 @@ class liberator_book_app {
 	setUpScrollEventHandler() {
 		var appInstance = this;
 		appInstance.bookEl.onscroll = function(e) {
-			//appInstance.loadNextPageIfRequired();
+			appInstance.loadNextPageIfRequired();
 		}
 	}
 
@@ -186,8 +185,6 @@ class liberator_bookmarker {
 		}
 		//POST: bookmarkNode is where we'd like to bookmark 
 
-		console.log("offset to bookmark: "+bookmarkNode.offsetTop);
-
 		var curParent = bookmarkNode;
 		var ancestorList = [];
 		while( curParent != this.contentEl ) {
@@ -220,7 +217,7 @@ class liberator_bookmarker {
 		}
 		//POST: charCount includes all chars before bookmarkNode 
 
-		console.log(bookmarkNode);
+		//console.log(bookmarkNode);
 		console.log('bookmarking at char: '+charCount);
 		document.cookie = this.BOOKMARK_COOKIE_NAME+"="+charCount;
 	}
