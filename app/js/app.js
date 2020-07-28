@@ -24,7 +24,6 @@ class liberator_book_app {
 
 	init() {
 		var bookmarkedChar = this.bookmarker.getSavedBookmarkChar();
-		console.log(bookmarkedChar);
 
 		this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
 			var styleEl = document.createElement('style');
@@ -40,14 +39,13 @@ class liberator_book_app {
 			this.bookEl.appendChild(this.bookContentEl);
 
 			var appInstance = this;
-			this.loadNextPage( function(){ appInstance.initInteractive() });
+			this.loadPage(bookmarkedChar, function(){ appInstance.initInteractive() });
+			//this.loadNextPage( function(){ appInstance.initInteractive() });
 		});
 	}
 
 	initInteractive() {
 		this.setUpScrollEventHandler();
-		
-		//TODO: make the line below not "time-sensitive"
 		this.bookmarker.setBookmarkElement(this.bookContentEl);
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
 		this.bookEl.scrollTop = curBookmarkOffset;
@@ -94,7 +92,7 @@ class liberator_book_app {
 
 		this.lib.getPage(this.curPageNum).then( (content) => {
 			//do i actually need the line below?  Doesn't seem to do anything
-			this.processCharacters(content);
+			//this.processCharacters(content);
 			this.bookContentEl.innerHTML += content;
 
 			this.isLoadingPage = false;
@@ -105,6 +103,26 @@ class liberator_book_app {
 		.catch( function(error) {
 			console.log('error loading next page');
 			appInstance.curPageNum--;
+		});	
+	}
+
+	//this loads pages by character number (like in bookmarks)
+	loadPage(curChar, callback) {
+		this.isLoadingPage = true;
+		var appInstance = this;
+
+		this.lib.getPageByChar(curChar).then( (page) => {
+
+			appInstance.curPageNum = page.pageNum;
+			appInstance.bookContentEl.innerHTML += page.content;
+			appInstance.isLoadingPage = false;
+
+			if( callback!=null ) {
+				callback();
+			}
+		})
+		.catch( function(error) {
+			console.log('error loading page at char: '+curChar);
 		});	
 	}
 }
@@ -145,6 +163,9 @@ class liberator_bookmarker {
 		var bookmarkedChar = this.savedBookmarkChar;
 		if( bookmarkedChar == undefined ) {
 			bookmarkedChar = this.getCookie(this.BOOKMARK_COOKIE_NAME);
+			if( bookmarkedChar==undefined ) {
+				return 0;
+			}
 			console.log("retrieved bookmark char: "+bookmarkedChar);
 		}
 		return bookmarkedChar;
@@ -273,18 +294,36 @@ class liberator_client {
 		return (pageNum - 1) * CHARS_PER_PAGE;
 	}
 
+	getPageUrlByChar(char) {
+		var charURL = Math.floor(char/CHARS_PER_PAGE) * CHARS_PER_PAGE;
+		return this.bookRootURL+charURL+'.html';
+	}
+
 	getPage(pageNum) {
 		var charOfPage = this.getCharOfPage(pageNum);
 
 		return fetch(this.bookRootURL+charOfPage+'.html')
-		.then( resp => resp.text() )
-		.then( text => {
-			return text;
-		})
-		.catch(function(error) {
-			console.log(error)
-			throw error;
-		});
+			.then( resp => resp.text() )
+			.then( text => {
+				return text;
+			})
+			.catch(function(error) {
+				console.log(error)
+				throw error;
+			});
+	}
+
+	getPageByChar(char) {
+		var pageNum = Math.floor(char/CHARS_PER_PAGE)+1;
+		return fetch(this.getPageUrlByChar(char))
+			.then( resp => resp.text() )
+			.then( text => {
+				return { content: text, pageNum: pageNum};
+			})
+			.catch(function(error) {
+				console.log(error)
+				throw error;
+			});
 	}
 
 	getBookStylesheet(cssURL) {
