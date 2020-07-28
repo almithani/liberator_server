@@ -17,11 +17,15 @@ class liberator_book_app {
 		this.cssURL = 'http://68.183.192.73:8080/The_Big_Picture/css/idGeneratedStyles.css';
 
 		this.lib = new liberator_client(this.bookURL);
+		this.bookmarker = new liberator_bookmarker();
 
 		this.isLoadingPage = false;
 	}
 
 	init() {
+		var bookmarkedChar = this.bookmarker.getSavedBookmarkChar();
+		console.log(bookmarkedChar);
+
 		this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
 			var styleEl = document.createElement('style');
 			styleEl.innerHTML = styles;
@@ -42,9 +46,9 @@ class liberator_book_app {
 
 	initInteractive() {
 		this.setUpScrollEventHandler();
-		this.bookmarker = new liberator_bookmarker(this.bookContentEl);
-
+		
 		//TODO: make the line below not "time-sensitive"
+		this.bookmarker.setBookmarkElement(this.bookContentEl);
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
@@ -113,25 +117,44 @@ class liberator_book_app {
 */
 class liberator_bookmarker {
 
-	constructor(contentElement){ 
-		this.contentEl = contentElement;
-		this.scrollEl = contentElement.parentElement;
-		this.bookmarkInterval = null; //we will init this in setUpBookmarkingInterval
+	constructor(){ 
 		this.BOOKMARK_COOKIE_NAME = "curChar";
+		this.savedBookmarkChar = this.getSavedBookmarkChar();
 
-		this.setUpBookmarkingInterval();
+		//these will be initialized in setBookmarkElement
+		this.contentEl = null;
+		this.scrollEl = null;
+		this.bookmarkInterval = null; 
+		
 	}
 
-	setUpBookmarkingInterval() {
+	//this function can be called by consumers to start auto-bookmarking
+	// if it's called before getSavedBookmarkChar, it could overwrite initial value
+	setBookmarkElement(contentElement) {
+
+		this.contentEl = contentElement;
+		this.scrollEl = contentElement.parentElement;
+
 		var bookmarkerInstance = this;
 		this.bookmarkInterval = setInterval( function(){ 
 			bookmarkerInstance.updateCharCounter(); 
 		}, 5000);
 	}
 
+	getSavedBookmarkChar() {
+		var bookmarkedChar = this.savedBookmarkChar;
+		if( bookmarkedChar == undefined ) {
+			bookmarkedChar = this.getCookie(this.BOOKMARK_COOKIE_NAME);
+			console.log("retrieved bookmark char: "+bookmarkedChar);
+		}
+		return bookmarkedChar;
+	}
+
 	getBookmarkOffset() {
-		var bookmarkedChar = this.getCookie(this.BOOKMARK_COOKIE_NAME);
-		console.log("retrieved bookmark char: "+bookmarkedChar)
+		//error case in case we don't have a content element
+		if(this.contentEl==null) { return -1; }
+		
+		var bookmarkedChar = this.savedBookmarkChar;
 
 		var charCount = 0;
 		var childIterator = 0;
