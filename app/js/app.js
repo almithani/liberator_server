@@ -80,8 +80,6 @@ class liberator_book_app {
 
 
 		if ( heightLeft <= NEXT_PAGE_LOAD_THRESHOLD ) {
-			//this.isLoadingPage = true;
-			//this.loadNextPage();
 			this.loadPageByNum(this.curPageNum+1);
 		}		
 	}
@@ -233,17 +231,18 @@ class liberator_bookmarker {
 		var charIterator = document.createNodeIterator(this.contentEl, NodeFilter.SHOW_ELEMENT);
 		var curNode = charIterator.nextNode(); //this gives us the root node
 		curNode = charIterator.nextNode(); //this gives us the first child
-		var bookmarkNode = null;
+		var bookmarkNode = curNode;
 
 		while(!curNode.offsetTop || (curNode.offsetTop < this.scrollEl.scrollTop) ) {
-			bookmarkNode = curNode;
 			curNode = charIterator.nextNode();
+			bookmarkNode = curNode;
 		}
 		//POST: bookmarkNode is where we'd like to bookmark 
 
 		var curParent = bookmarkNode;
 		var ancestorList = [];
 		while( curParent != this.contentEl ) {
+			console.log(curParent);
 			ancestorList.push(curParent);
 			curParent = curParent.parentNode;
 		}
