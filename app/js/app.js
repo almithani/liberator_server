@@ -231,8 +231,8 @@ class liberator_bookmarker {
 		var charIterator = document.createNodeIterator(this.contentEl, NodeFilter.SHOW_ELEMENT);
 		var curNode = charIterator.nextNode(); //this gives us the root node
 		curNode = charIterator.nextNode(); //this gives us the first child
+		
 		var bookmarkNode = curNode;
-
 		while(!curNode.offsetTop || (curNode.offsetTop < this.scrollEl.scrollTop) ) {
 			curNode = charIterator.nextNode();
 			bookmarkNode = curNode;
@@ -242,7 +242,6 @@ class liberator_bookmarker {
 		var curParent = bookmarkNode;
 		var ancestorList = [];
 		while( curParent != this.contentEl ) {
-			console.log(curParent);
 			ancestorList.push(curParent);
 			curParent = curParent.parentNode;
 		}
