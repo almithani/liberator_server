@@ -39,8 +39,7 @@ class liberator_book_app {
 			this.bookEl.appendChild(this.bookContentEl);
 
 			var appInstance = this;
-			this.loadPage(bookmarkedChar, function(){ appInstance.initInteractive() });
-			//this.loadNextPage( function(){ appInstance.initInteractive() });
+			this.loadPageByChar(bookmarkedChar, function(){ appInstance.initInteractive() });
 		});
 	}
 
@@ -81,33 +80,34 @@ class liberator_book_app {
 
 
 		if ( heightLeft <= NEXT_PAGE_LOAD_THRESHOLD ) {
-			this.isLoadingPage = true;
-			this.loadNextPage();
+			//this.isLoadingPage = true;
+			//this.loadNextPage();
+			this.loadPageByNum(this.curPageNum+1);
 		}		
 	}
 
-	loadNextPage(callback) {
-		this.curPageNum++;
+	loadPageByNum(pageNum, callback) {
+		this.isLoadingPage = true;
 		var appInstance = this;
 
-		this.lib.getPage(this.curPageNum).then( (content) => {
-			//do i actually need the line below?  Doesn't seem to do anything
-			//this.processCharacters(content);
-			this.bookContentEl.innerHTML += content;
+		this.lib.getPage(pageNum).then( (content) => {
 
-			this.isLoadingPage = false;
+			appInstance.curPageNum = pageNum;
+			appInstance.bookContentEl.innerHTML += content;
+			appInstance.isLoadingPage = false;
+
 			if( callback!=null ) {
 				callback();
 			}
 		})
 		.catch( function(error) {
-			console.log('error loading next page');
-			appInstance.curPageNum--;
+			console.log('error loading page num: '+pageNum+' - '+error);
+
 		});	
 	}
 
 	//this loads pages by character number (like in bookmarks)
-	loadPage(curChar, callback) {
+	loadPageByChar(curChar, callback) {
 		this.isLoadingPage = true;
 		var appInstance = this;
 
@@ -122,7 +122,7 @@ class liberator_book_app {
 			}
 		})
 		.catch( function(error) {
-			console.log('error loading page at char: '+curChar);
+			console.log('error loading page at char: '+curChar+' - '+error);
 		});	
 	}
 }
@@ -181,7 +181,12 @@ class liberator_bookmarker {
 		var childIterator = 0;
 		var traversalNode = this.contentEl;
 		var curChild = traversalNode.children[childIterator];
+
 		while(true) {
+
+			//There's something wrong with this traversal...the error case is getting called 100% of the time
+			// idea: maybe to do with malformed HTML (i.e. self-closing tags?)
+
 			if ( charCount+curChild.textContent.length==bookmarkedChar ) {
 				//we have the node!
 				break;
@@ -202,7 +207,14 @@ class liberator_bookmarker {
 				//we haven't yet passed our node
 				charCount += curChild.textContent.length;
 				childIterator++;
+				var prevChild = curChild;
 				curChild = traversalNode.children[childIterator];
+
+				if(curChild == undefined) {
+					//error case to account for small inaccuracies
+					curChild = prevChild;
+					break;
+				}
 				continue;
 			}
 		}
