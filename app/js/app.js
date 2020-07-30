@@ -45,17 +45,27 @@ class liberator_book_app {
 
 	initInteractive() {
 		this.setUpScrollEventHandler();
-		this.bookmarker.setBookmarkElement(this.bookContentEl);
+
+		var appInstance = this;
+		this.bookmarker.initBookmarking(this.bookContentEl, function() { 
+			return appInstance.getBookmarkCharOffset(appInstance.pages);
+		});
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
-	processCharacters(pageContent) {
-		var pageObject = {
-			content: pageContent
+	getBookmarkCharOffset(pageSparseArray) {
+		var charOffset=0;
+		for(var i=0; i<pageSparseArray.length; i++) {
+			if( pageSparseArray[i]!=true ) {
+				charOffset += CHARS_PER_PAGE;
+			}
 		}
+		return charOffset;
+	}
 
-		this.pages.push(pageObject);
+	markPageLoaded(pageNum) {
+		this.pages[pageNum] = true;
 	}
 
 	setUpScrollEventHandler() {
@@ -92,6 +102,7 @@ class liberator_book_app {
 
 			appInstance.curPageNum = pageNum;
 			appInstance.bookContentEl.innerHTML += content;
+			appInstance.markPageLoaded(appInstance.curPageNum);
 			appInstance.isLoadingPage = false;
 
 			if( callback!=null ) {
@@ -113,6 +124,7 @@ class liberator_book_app {
 
 			appInstance.curPageNum = page.pageNum;
 			appInstance.bookContentEl.innerHTML += page.content;
+			appInstance.markPageLoaded(appInstance.curPageNum);
 			appInstance.isLoadingPage = false;
 
 			if( callback!=null ) {
@@ -137,7 +149,7 @@ class liberator_bookmarker {
 		this.BOOKMARK_COOKIE_NAME = "curChar";
 		this.savedBookmarkChar = this.getSavedBookmarkChar();
 
-		//these will be initialized in setBookmarkElement
+		//these will be initialized in initBookmarking
 		this.contentEl = null;
 		this.scrollEl = null;
 		this.bookmarkInterval = null; 
@@ -146,14 +158,15 @@ class liberator_bookmarker {
 
 	//this function can be called by consumers to start auto-bookmarking
 	// if it's called before getSavedBookmarkChar, it could overwrite initial value
-	setBookmarkElement(contentElement) {
+	initBookmarking(contentElement, offsetFunction) {
 
 		this.contentEl = contentElement;
 		this.scrollEl = contentElement.parentElement;
 
 		var bookmarkerInstance = this;
 		this.bookmarkInterval = setInterval( function(){ 
-			bookmarkerInstance.updateCharCounter(); 
+			var charOffset = offsetFunction();
+			bookmarkerInstance.updateCharCounter(charOffset); 
 		}, 5000);
 	}
 
@@ -227,7 +240,12 @@ class liberator_bookmarker {
 		return 0;
 	}
 
-	updateCharCounter() {
+	updateCharCounter(charOffset) {
+
+		if(charOffset==undefined) {
+			charOffset = 0;
+		}
+
 		var charIterator = document.createNodeIterator(this.contentEl, NodeFilter.SHOW_ELEMENT);
 		var curNode = charIterator.nextNode(); //this gives us the root node
 		curNode = charIterator.nextNode(); //this gives us the first child
@@ -247,7 +265,7 @@ class liberator_bookmarker {
 		}
 		//POST: ancestorList contains ancestors of bookmarkNode
 
-		var charCount = 0;
+		var charCount = charOffset;
 		var childIterator = 0;
 		var traversalNode = this.contentEl;//bookmarkParent;
 		var curChild = traversalNode.children[childIterator];
@@ -301,7 +319,7 @@ class liberator_client {
 	}
 
 	getCharOfPage(pageNum) {
-		return (pageNum - 1) * CHARS_PER_PAGE;
+		return (pageNum) * CHARS_PER_PAGE;
 	}
 
 	getPageUrlByChar(char) {
@@ -324,7 +342,7 @@ class liberator_client {
 	}
 
 	getPageByChar(char) {
-		var pageNum = Math.floor(char/CHARS_PER_PAGE)+1;
+		var pageNum = Math.floor(char/CHARS_PER_PAGE);
 		return fetch(this.getPageUrlByChar(char))
 			.then( resp => resp.text() )
 			.then( text => {
