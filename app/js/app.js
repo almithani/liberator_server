@@ -13,33 +13,38 @@ class liberator_book_app {
 		this.bookContentEl = null;	//we will set this in the init
 		this.pages = Array();
 		this.curPageNum = 0;
-		this.bookURL = 'http://68.183.192.73:8080/The_Big_Picture/xhtml/';
-		this.cssURL = 'http://68.183.192.73:8080/The_Big_Picture/css/idGeneratedStyles.css';
+		this.apiURL = "http://68.183.192.73"
+		//this.bookURL = 'http://68.183.192.73:8080/The_Big_Picture';
+		//this.cssURL = 'http://68.183.192.73:8080/The_Big_Picture/css/idGeneratedStyles.css';
+		this.bookURL = 'Le_Morte_Darthur';
+		this.cssURL = 'http://68.183.192.73:8080/Le_Morte_Darthur/css/idGeneratedStyles.css';
 
-		this.lib = new liberator_client(this.bookURL);
-		this.bookmarker = new liberator_bookmarker();
+		this.lib = new liberator_client(this.apiURL, this.bookURL);
+		this.bookmarker = new liberator_bookmarker(this.lib);
 
 		this.isLoadingPage = false;
 	}
 
 	init() {
-		var bookmarkedChar = this.bookmarker.getSavedBookmarkChar();
+		//var bookmarkedChar = this.bookmarker.getSavedBookmarkChar();
 
-		this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
-			var styleEl = document.createElement('style');
-			styleEl.innerHTML = styles;
-			this.bookEl.appendChild(styleEl);
+		this.bookmarker.getSavedBookmarkChar().then( (bookmarkedChar) => {
+			this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
+				var styleEl = document.createElement('style');
+				styleEl.innerHTML = styles;
+				this.bookEl.appendChild(styleEl);
 
-			/*
-				Because of the viewport sizing of bookEl, we need this content
-					element so the child HTML style doesn't get messed up
-			*/
-			this.bookContentEl = document.createElement('div');
-			this.bookContentEl.id = "liberator-content";
-			this.bookEl.appendChild(this.bookContentEl);
+				/*
+					Because of the viewport sizing of bookEl, we need this content
+						element so the child HTML style doesn't get messed up
+				*/
+				this.bookContentEl = document.createElement('div');
+				this.bookContentEl.id = "liberator-content";
+				this.bookEl.appendChild(this.bookContentEl);
 
-			var appInstance = this;
-			this.loadPageByChar(bookmarkedChar, function(){ appInstance.initInteractive() });
+				var appInstance = this;
+				this.loadPageByChar(bookmarkedChar, function(){ appInstance.initInteractive() });
+			});
 		});
 	}
 
@@ -145,9 +150,12 @@ class liberator_book_app {
 */
 class liberator_bookmarker {
 
-	constructor(){ 
+	constructor(liberatorClient){ 
+		this.libClient = liberatorClient;
+
 		this.BOOKMARK_COOKIE_NAME = "curChar";
-		this.savedBookmarkChar = this.getSavedBookmarkChar();
+		this.savedBookmarkChar = undefined;
+		this.getSavedBookmarkChar(); //we call this for the side effect
 
 		//these will be initialized in initBookmarking
 		this.contentEl = null;
@@ -171,15 +179,22 @@ class liberator_bookmarker {
 	}
 
 	getSavedBookmarkChar() {
+
 		var bookmarkedChar = this.savedBookmarkChar;
-		if( bookmarkedChar == undefined ) {
-			bookmarkedChar = this.getCookie(this.BOOKMARK_COOKIE_NAME);
-			if( bookmarkedChar==undefined ) {
+		var theReader = this.findGetParameter('reader');
+		if( bookmarkedChar == undefined && theReader ) {
+
+			return this.libClient.getBookmarkForReader(theReader).then( char => {
+				console.log("retrieved bookmark char: "+char);
+				this.savedBookmarkChar = char;
+				return char;
+			});
+
+		} else {
+			return new Promise(function() {
 				return 0;
-			}
-			console.log("retrieved bookmark char: "+bookmarkedChar);
+			});
 		}
-		return bookmarkedChar;
 	}
 
 	getBookmarkOffset() {
@@ -295,6 +310,18 @@ class liberator_bookmarker {
 	}
 
 
+	//"borrowed" from here: https://stackoverflow.com/questions/5448545/how-to-retrieve-get-parameters-from-javascript/
+	findGetParameter(parameterName) {
+		var result = null,
+		tmp = [];
+		var items = location.search.substr(1).split("&");
+		for (var index = 0; index < items.length; index++) {
+			tmp = items[index].split("=");
+			if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+		}
+		return result;
+	}
+
 
 	//"borrowed" from here: https://stackoverflow.com/a/49224652
 	getCookie(name) {
@@ -314,8 +341,10 @@ class liberator_bookmarker {
 */
 class liberator_client {
 
-	constructor(bookURL){
-		this.bookRootURL = bookURL;
+	constructor(apiURL, bookURL){
+		this.apiURL = apiURL;
+		this.bookRoot = bookURL;
+		this.bookURL = this.apiURL+":8080/"+this.bookRoot;
 	}
 
 	getCharOfPage(pageNum) {
@@ -324,13 +353,13 @@ class liberator_client {
 
 	getPageUrlByChar(char) {
 		var charURL = Math.floor(char/CHARS_PER_PAGE) * CHARS_PER_PAGE;
-		return this.bookRootURL+charURL+'.html';
+		return this.bookURL+'/xhtml/'+charURL+'.html';
 	}
 
 	getPage(pageNum) {
 		var charOfPage = this.getCharOfPage(pageNum);
 
-		return fetch(this.bookRootURL+charOfPage+'.html')
+		return fetch(this.bookURL+'/xhtml/'+charOfPage+'.html')
 			.then( resp => resp.text() )
 			.then( text => {
 				return text;
@@ -362,5 +391,25 @@ class liberator_client {
 		}).catch( function(error) {
 			console.log(error);
 		})
+	}
+
+	getBookmarkForReader(reader) {
+		return fetch(this.apiURL+"/"+this.bookRoot+'/api/bookmark?reader='+reader)
+			.then( resp => resp.json() )
+			.then( body => {
+				if( body.status=="OK" && body.char ) {
+					return body.char;
+				} else {
+					return 0;
+				}
+			})
+			.catch(function(error) {
+				console.log(error)
+				throw error;
+			});
+	}
+
+	setBookmarkForReader(reader, charToBookmark) {
+
 	}
 }
