@@ -179,9 +179,8 @@ class liberator_bookmarker {
 
 	getSavedBookmarkChar() {
 
-		var bookmarkedChar = this.savedBookmarkChar;
 		var theReader = this.findGetParameter('reader');
-		if( bookmarkedChar == undefined && theReader ) {
+		if( this.savedBookmarkChar == undefined && theReader ) {
 
 			return this.libClient.getBookmarkForReader(theReader).then( char => {
 				console.log("retrieved bookmark char: "+char);
@@ -191,8 +190,12 @@ class liberator_bookmarker {
 
 		} else {
 			return new Promise((resolve, reject) => {
-				this.savedBookmarkChar = 0;
-				resolve(0);
+				if( this.savedBookmarkChar == undefined ) {
+					this.savedBookmarkChar = 0;
+					resolve(0);
+				} else {
+					resolve(this.savedBookmarkChar);
+				}
 			});
 		}
 	}
