@@ -14,7 +14,7 @@ class liberator_book_app {
 		this.pages = Array();
 		this.curPageNum = 0;
 		this.apiURL = "http://68.183.192.73"
-		//this.bookURL = 'http://68.183.192.73:8080/The_Big_Picture';
+		//this.bookURL = 'The_Big_Picture';
 		//this.cssURL = 'http://68.183.192.73:8080/The_Big_Picture/css/idGeneratedStyles.css';
 		this.bookURL = 'Le_Morte_Darthur';
 		this.cssURL = 'http://68.183.192.73:8080/Le_Morte_Darthur/css/idGeneratedStyles.css';
@@ -26,7 +26,6 @@ class liberator_book_app {
 	}
 
 	init() {
-		//var bookmarkedChar = this.bookmarker.getSavedBookmarkChar();
 
 		this.bookmarker.getSavedBookmarkChar().then( (bookmarkedChar) => {
 			this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
@@ -191,8 +190,8 @@ class liberator_bookmarker {
 			});
 
 		} else {
-			return new Promise(function() {
-				return 0;
+			return new Promise((resolve, reject) => {
+				resolve(0);
 			});
 		}
 	}
