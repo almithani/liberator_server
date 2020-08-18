@@ -191,6 +191,7 @@ class liberator_bookmarker {
 
 		} else {
 			return new Promise((resolve, reject) => {
+				this.savedBookmarkChar = 0;
 				resolve(0);
 			});
 		}
@@ -199,7 +200,6 @@ class liberator_bookmarker {
 	getBookmarkOffset() {
 		//error case in case we don't have a content element
 		if(this.contentEl==null) { return -1; }
-		
 		var bookmarkedChar = this.savedBookmarkChar;
 
 		var charCount = 0;
