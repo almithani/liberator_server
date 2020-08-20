@@ -306,9 +306,11 @@ class liberator_bookmarker {
 		}
 		//POST: charCount includes all chars before bookmarkNode 
 
-		//console.log(bookmarkNode);
-		console.log('bookmarking at char: '+charCount);
-		document.cookie = this.BOOKMARK_COOKIE_NAME+"="+charCount;
+		var theReader = this.findGetParameter('reader');
+		if( theReader ) {
+			console.log('bookmarking at char: '+charCount);
+			this.libClient.setBookmarkForReader(theReader, charCount);
+		}
 	}
 
 
@@ -412,6 +414,17 @@ class liberator_client {
 	}
 
 	setBookmarkForReader(reader, charToBookmark) {
+		fetch(this.apiURL+"/"+this.bookRoot+'/api/bookmark?reader='+reader, {
+			method: "POST",
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+			},
+			body: "char="+charToBookmark,
+		})
+		.then( resp => resp.json() )
+		.catch(function(error) {
+			console.log("Error in saving bookmark: "+error);
+		});
 
 	}
 }
