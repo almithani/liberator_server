@@ -3,23 +3,32 @@
 const CHARS_PER_PAGE = 30000;
 
 
+var HELPERS = {
+	//"borrowed" from here: https://stackoverflow.com/questions/5448545/how-to-retrieve-get-parameters-from-javascript/
+	findGetParameter(parameterName) {
+		var result = null,
+		tmp = [];
+		var items = location.search.substr(1).split("&");
+		for (var index = 0; index < items.length; index++) {
+			tmp = items[index].split("=");
+			if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+		}
+		return result;
+	}
+}
+
 /*
 	The purpose of this class is to abstract the "book" UI
 */
 class liberator_book_app {
 
-	constructor(targetElementId){ 
+	constructor(targetElementId, bookURL){ 
 		this.bookEl = document.getElementById(targetElementId);
 		this.bookContentEl = null;	//we will set this in the init
 		this.pages = Array();
 		this.curPageNum = 0;
-		this.apiURL = "http://68.183.192.73"
-		//this.bookURL = 'The_Big_Picture';
-		//this.cssURL = 'http://68.183.192.73:8080/The_Big_Picture/css/idGeneratedStyles.css';
-		this.bookURL = 'Le_Morte_Darthur';
-		this.cssURL = 'http://68.183.192.73:8080/Le_Morte_Darthur/css/idGeneratedStyles.css';
 
-		this.lib = new liberator_client(this.apiURL, this.bookURL);
+		this.lib = new liberator_client("http://68.183.192.73", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib);
 
 		this.isLoadingPage = false;
@@ -28,7 +37,7 @@ class liberator_book_app {
 	init() {
 
 		this.bookmarker.getSavedBookmarkChar().then( (bookmarkedChar) => {
-			this.lib.getBookStylesheet(this.cssURL).then( (styles) => {
+			this.lib.getBookStylesheet().then( (styles) => {
 				var styleEl = document.createElement('style');
 				styleEl.innerHTML = styles;
 				this.bookEl.appendChild(styleEl);
@@ -55,6 +64,7 @@ class liberator_book_app {
 			return appInstance.getBookmarkCharOffset(appInstance.pages);
 		});
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
+		this.bookmarker.setBookmarkElementPosition(curBookmarkOffset);
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
@@ -159,7 +169,9 @@ class liberator_bookmarker {
 		//these will be initialized in initBookmarking
 		this.contentEl = null;
 		this.scrollEl = null;
+		this.bookmarkEl = null;
 		this.bookmarkInterval = null; 
+		this.offsetFunction = null;
 		
 	}
 
@@ -169,6 +181,10 @@ class liberator_bookmarker {
 
 		this.contentEl = contentElement;
 		this.scrollEl = contentElement.parentElement;
+		this.bookmarkEl = document.createElement('div');
+		this.bookmarkEl.id = "bookmark";
+		this.contentEl.appendChild(this.bookmarkEl);
+		this.offsetFunction = offsetFunction;
 
 		var bookmarkerInstance = this;
 		this.bookmarkInterval = setInterval( function(){ 
@@ -179,7 +195,7 @@ class liberator_bookmarker {
 
 	getSavedBookmarkChar() {
 
-		var theReader = this.findGetParameter('reader');
+		var theReader = HELPERS.findGetParameter('reader');
 		if( this.savedBookmarkChar == undefined && theReader ) {
 
 			return this.libClient.getBookmarkForReader(theReader).then( char => {
@@ -205,7 +221,7 @@ class liberator_bookmarker {
 		if(this.contentEl==null) { return -1; }
 		var bookmarkedChar = this.savedBookmarkChar;
 
-		var charCount = 0;
+		var charCount = this.offsetFunction();
 		var childIterator = 0;
 		var traversalNode = this.contentEl;
 		var curChild = traversalNode.children[childIterator];
@@ -274,6 +290,8 @@ class liberator_bookmarker {
 		}
 		//POST: bookmarkNode is where we'd like to bookmark 
 
+		this.setBookmarkElementPosition(bookmarkNode.offsetTop);
+
 		var curParent = bookmarkNode;
 		var ancestorList = [];
 		while( curParent != this.contentEl ) {
@@ -306,24 +324,15 @@ class liberator_bookmarker {
 		}
 		//POST: charCount includes all chars before bookmarkNode 
 
-		var theReader = this.findGetParameter('reader');
+		var theReader = HELPERS.findGetParameter('reader');
 		if( theReader ) {
 			console.log('bookmarking at char: '+charCount);
 			this.libClient.setBookmarkForReader(theReader, charCount);
 		}
 	}
 
-
-	//"borrowed" from here: https://stackoverflow.com/questions/5448545/how-to-retrieve-get-parameters-from-javascript/
-	findGetParameter(parameterName) {
-		var result = null,
-		tmp = [];
-		var items = location.search.substr(1).split("&");
-		for (var index = 0; index < items.length; index++) {
-			tmp = items[index].split("=");
-			if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
-		}
-		return result;
+	setBookmarkElementPosition(topPx) {
+		this.bookmarkEl.setAttribute('style', 'top:'+topPx+'px');
 	}
 
 
@@ -387,7 +396,8 @@ class liberator_client {
 			});
 	}
 
-	getBookStylesheet(cssURL) {
+	getBookStylesheet() {
+		var cssURL = this.bookURL+'/css/idGeneratedStyles.css'
 		return fetch(cssURL)
 		.then( resp => resp.text() )
 		.then( text => {
