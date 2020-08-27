@@ -140,6 +140,7 @@ class liberator_book_app {
 			appInstance.bookContentEl.innerHTML += page.content;
 			appInstance.markPageLoaded(appInstance.curPageNum);
 			appInstance.isLoadingPage = false;
+			console.log('loaded new page');
 
 			if( callback!=null ) {
 				callback();
@@ -183,7 +184,7 @@ class liberator_bookmarker {
 		this.scrollEl = contentElement.parentElement;
 		this.bookmarkEl = document.createElement('div');
 		this.bookmarkEl.id = "bookmark";
-		this.contentEl.appendChild(this.bookmarkEl);
+		this.contentEl.prepend(this.bookmarkEl);
 		this.offsetFunction = offsetFunction;
 
 		var bookmarkerInstance = this;
@@ -224,7 +225,7 @@ class liberator_bookmarker {
 		var charCount = this.offsetFunction();
 		var childIterator = 0;
 		var traversalNode = this.contentEl;
-		var curChild = traversalNode.children[childIterator];
+		var curChild = traversalNode.childNodes[childIterator];
 
 		while(true) {
 
@@ -239,7 +240,7 @@ class liberator_bookmarker {
 				childIterator = 0;
 				traversalNode = curChild;
 				var prevChild = curChild;
-				curChild = traversalNode.children[childIterator];
+				curChild = traversalNode.childNodes[childIterator];
 
 				if(curChild == undefined) {
 					//error case to account for small inaccuracies
@@ -252,7 +253,7 @@ class liberator_bookmarker {
 				charCount += curChild.textContent.length;
 				childIterator++;
 				var prevChild = curChild;
-				curChild = traversalNode.children[childIterator];
+				curChild = traversalNode.childNodes[childIterator];
 
 				if(curChild == undefined) {
 					//error case to account for small inaccuracies
@@ -275,6 +276,8 @@ class liberator_bookmarker {
 
 	updateCharCounter(charOffset) {
 
+		this.removeBookmarkElement();
+
 		if(charOffset==undefined) {
 			charOffset = 0;
 		}
@@ -290,7 +293,7 @@ class liberator_bookmarker {
 		}
 		//POST: bookmarkNode is where we'd like to bookmark 
 
-		this.setBookmarkElementPosition(bookmarkNode.offsetTop);
+		//this.setBookmarkElementPosition(bookmarkNode.offsetTop);
 
 		var curParent = bookmarkNode;
 		var ancestorList = [];
@@ -303,7 +306,7 @@ class liberator_bookmarker {
 		var charCount = charOffset;
 		var childIterator = 0;
 		var traversalNode = this.contentEl;//bookmarkParent;
-		var curChild = traversalNode.children[childIterator];
+		var curChild = traversalNode.childNodes[childIterator];
 		while(true) {
 			if( curChild == bookmarkNode ) {
 				//if it's our bookmark node, we're done
@@ -312,17 +315,19 @@ class liberator_bookmarker {
 				//if the node is not an ancestor, just include all text and move to next sibling
 				charCount += curChild.textContent.length;
 				childIterator++;
-				curChild = traversalNode.children[childIterator];
+				curChild = traversalNode.childNodes[childIterator];
 				continue;
 			} else {
 				//if the node is an ancestor, traverse its children
 				childIterator = 0;
 				traversalNode = curChild;
-				curChild = traversalNode.children[childIterator];
+				curChild = traversalNode.childNodes[childIterator];
 				continue;
 			}
 		}
 		//POST: charCount includes all chars before bookmarkNode 
+
+		this.addBookmarkElement(bookmarkNode.offsetTop);
 
 		var theReader = HELPERS.findGetParameter('reader');
 		if( theReader ) {
@@ -331,8 +336,23 @@ class liberator_bookmarker {
 		}
 	}
 
-	setBookmarkElementPosition(topPx) {
+	addBookmarkElement(topPx) {
+		console.log(this.bookmarkEl.getAttribute('style'));
 		this.bookmarkEl.setAttribute('style', 'top:'+topPx+'px');
+		console.log(this.bookmarkEl.getAttribute('style'));
+		this.contentEl.prepend(this.bookmarkEl);
+	}
+
+	removeBookmarkElement() {
+		this.contentEl.removeChild(this.bookmarkEl);
+	}
+
+	setBookmarkElementPosition(topPx) {
+		//this.contentEl.removeChild(this.bookmarkEl);
+		console.log(this.bookmarkEl.getAttribute('style'));
+		this.bookmarkEl.setAttribute('style', 'top:'+topPx+'px');
+		console.log(this.bookmarkEl.getAttribute('style'));
+		//this.contentEl.prepend(this.bookmarkEl);
 	}
 
 
