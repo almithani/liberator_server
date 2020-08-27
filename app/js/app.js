@@ -184,7 +184,6 @@ class liberator_bookmarker {
 		this.scrollEl = contentElement.parentElement;
 		this.bookmarkEl = document.createElement('div');
 		this.bookmarkEl.id = "bookmark";
-		this.contentEl.prepend(this.bookmarkEl);
 		this.offsetFunction = offsetFunction;
 
 		var bookmarkerInstance = this;
@@ -226,6 +225,7 @@ class liberator_bookmarker {
 		var childIterator = 0;
 		var traversalNode = this.contentEl;
 		var curChild = traversalNode.childNodes[childIterator];
+		var prevChild = null;
 
 		while(true) {
 
@@ -239,7 +239,7 @@ class liberator_bookmarker {
 				//we've gone past the target node, drop traversal down into this node
 				childIterator = 0;
 				traversalNode = curChild;
-				var prevChild = curChild;
+				prevChild = curChild;
 				curChild = traversalNode.childNodes[childIterator];
 
 				if(curChild == undefined) {
@@ -252,7 +252,7 @@ class liberator_bookmarker {
 				//we haven't yet passed our node
 				charCount += curChild.textContent.length;
 				childIterator++;
-				var prevChild = curChild;
+				prevChild = curChild;
 				curChild = traversalNode.childNodes[childIterator];
 
 				if(curChild == undefined) {
@@ -265,13 +265,19 @@ class liberator_bookmarker {
 		}
 		//POST: curChild is the node we want to scroll to
 
-		//offsetTop seems to not be defined for text nodes...
-		// TODO: fix this
+		//if the node doesn't have an offset, get offset of prev sibling or parent
+		var bookmarkOffset = 0;
 		if( curChild.offsetTop ) {
-			return curChild.offsetTop
+			bookmarkOffset = curChild.offsetTop;
+		} else if( curChild.previousElementSibling ) {
+			bookmarkOffset = curChild.previousElementSibling.offsetTop;
+		} else if( curChild.parentElement ) {
+			bookmarkOffset = curChild.parentElement.offsetTop;
 		}
 
-		return 0;
+		this.addBookmarkElement(bookmarkOffset);
+		return bookmarkOffset;
+
 	}
 
 	updateCharCounter(charOffset) {
@@ -344,7 +350,12 @@ class liberator_bookmarker {
 	}
 
 	removeBookmarkElement() {
-		this.contentEl.removeChild(this.bookmarkEl);
+		try {
+			this.contentEl.removeChild(this.bookmarkEl);
+		} catch(e) {
+			//do nothing
+		}
+		
 	}
 
 	setBookmarkElementPosition(topPx) {
