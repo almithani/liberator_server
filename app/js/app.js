@@ -64,7 +64,6 @@ class liberator_book_app {
 			return appInstance.getBookmarkCharOffset(appInstance.pages);
 		});
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
-		this.bookmarker.setBookmarkElementPosition(curBookmarkOffset);
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
@@ -229,12 +228,10 @@ class liberator_bookmarker {
 
 		while(true) {
 
-			//There's something wrong with this traversal...the error case is getting called 100% of the time
-			// idea: maybe to do with malformed HTML (i.e. self-closing tags?)
-
 			if ( charCount+curChild.textContent.length==bookmarkedChar ) {
 				//we have the node!
 				break;
+
 			} else if ( charCount+curChild.textContent.length > bookmarkedChar ) {
 				//we've gone past the target node, drop traversal down into this node
 				childIterator = 0;
@@ -248,6 +245,7 @@ class liberator_bookmarker {
 					break;
 				}
 				continue;
+
 			} else {
 				//we haven't yet passed our node
 				charCount += curChild.textContent.length;
@@ -261,6 +259,7 @@ class liberator_bookmarker {
 					break;
 				}
 				continue;
+				
 			}
 		}
 		//POST: curChild is the node we want to scroll to
@@ -297,9 +296,7 @@ class liberator_bookmarker {
 			curNode = charIterator.nextNode();
 			bookmarkNode = curNode;
 		}
-		//POST: bookmarkNode is where we'd like to bookmark 
-
-		//this.setBookmarkElementPosition(bookmarkNode.offsetTop);
+		//POST: bookmarkNode is where we'd like to bookmark
 
 		var curParent = bookmarkNode;
 		var ancestorList = [];
@@ -343,9 +340,7 @@ class liberator_bookmarker {
 	}
 
 	addBookmarkElement(topPx) {
-		console.log(this.bookmarkEl.getAttribute('style'));
 		this.bookmarkEl.setAttribute('style', 'top:'+topPx+'px');
-		console.log(this.bookmarkEl.getAttribute('style'));
 		this.contentEl.prepend(this.bookmarkEl);
 	}
 
@@ -356,14 +351,6 @@ class liberator_bookmarker {
 			//do nothing
 		}
 		
-	}
-
-	setBookmarkElementPosition(topPx) {
-		//this.contentEl.removeChild(this.bookmarkEl);
-		console.log(this.bookmarkEl.getAttribute('style'));
-		this.bookmarkEl.setAttribute('style', 'top:'+topPx+'px');
-		console.log(this.bookmarkEl.getAttribute('style'));
-		//this.contentEl.prepend(this.bookmarkEl);
 	}
 
 
