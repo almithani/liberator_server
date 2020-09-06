@@ -28,7 +28,7 @@ class liberator_book_app {
 		this.pages = Array();
 		this.curPageNum = 0;
 
-		this.lib = new liberator_client("http://68.183.192.73", bookURL);
+		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib);
 
 		this.isLoadingPage = false;
@@ -259,7 +259,7 @@ class liberator_bookmarker {
 					break;
 				}
 				continue;
-				
+
 			}
 		}
 		//POST: curChild is the node we want to scroll to
