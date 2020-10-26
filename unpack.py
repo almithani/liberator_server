@@ -67,7 +67,7 @@ def write_book_meta(output_path:str):
 	global total_chars_processed 
 
 	file = open(output_path+BOOK_META_FILENAME, 'w')
-	content = "total_chars : " + str(total_chars_processed)
+	content = "total_chars:" + str(total_chars_processed)
 	file.write( content )
 	file.close()
 
