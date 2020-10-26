@@ -186,7 +186,13 @@ class liberator_timeline {
 
 		this.bookmarkEl = document.createElement('div');
 		this.bookmarkEl.className = "bookmark";
+		
+		var bookmarkLabelEl = document.createElement('div');
+		bookmarkLabelEl.className = "label";
+		var theReader = HELPERS.findGetParameter('reader');
+		bookmarkLabelEl.innerHTML = theReader ? theReader : "you";
 
+		this.bookmarkEl.append(bookmarkLabelEl);
 		this.timelineEl.append(this.bookmarkEl);
 		this.bookEl.append(this.timelineEl);
 	}
