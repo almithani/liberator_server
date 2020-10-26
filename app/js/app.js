@@ -18,7 +18,8 @@ var HELPERS = {
 }
 
 /*
-	The purpose of this class is to abstract the "book" UI
+	The purpose of this class is to abstract the "book" UX.  Think of it as a top-level
+		delegate for any and all "book" functionality
 */
 class liberator_book_app {
 
@@ -30,6 +31,7 @@ class liberator_book_app {
 
 		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib);
+		this.timeline = null; //initialized in init
 
 		this.isLoadingPage = false;
 	}
@@ -50,6 +52,8 @@ class liberator_book_app {
 				this.bookContentEl.id = "liberator-content";
 				this.bookEl.appendChild(this.bookContentEl);
 
+				this.timeline = new liberator_timeline(this.bookEl, this.lib);
+
 				var appInstance = this;
 				this.loadPageByChar(bookmarkedChar, function(){ appInstance.initInteractive() });
 			});
@@ -60,9 +64,15 @@ class liberator_book_app {
 		this.setUpScrollEventHandler();
 
 		var appInstance = this;
-		this.bookmarker.initBookmarking(this.bookContentEl, function() { 
-			return appInstance.getBookmarkCharOffset(appInstance.pages);
-		});
+		this.bookmarker.initBookmarking(
+			this.bookContentEl, 
+			function() { 
+				return appInstance.getBookmarkCharOffset(appInstance.pages);
+			},
+			function(newCharCount) {
+				appInstance.timeline.updateTimelineBookmark(newCharCount);
+			}
+		);
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
@@ -151,6 +161,42 @@ class liberator_book_app {
 	}
 }
 
+/*
+	The purpose of this class is to manage the "timeline" functionality including UI
+		- timeline is a full-book view of bookmarks, etc
+*/
+class liberator_timeline {
+	
+	constructor(bookElement,liberatorClient) {
+		this.libClient = liberatorClient;
+		this.bookEl = bookElement;
+
+		//initialized in init function
+		this.timelineEl = null; 
+		this.bookmarkEl = null;
+
+		this.TOTAL_CHARS = 655637; //this is hardcoded Killer Angels for now
+
+		this.init();
+	}
+
+	init() {
+		this.timelineEl = document.createElement('div');
+		this.timelineEl.id = "timeline";
+
+		this.bookmarkEl = document.createElement('div');
+		this.bookmarkEl.className = "bookmark";
+
+		this.timelineEl.append(this.bookmarkEl);
+		this.bookEl.append(this.timelineEl);
+	}
+
+	updateTimelineBookmark(newBookmarkChar) {
+		var newPosPercent = newBookmarkChar/this.TOTAL_CHARS*100;
+		this.bookmarkEl.setAttribute('style', 'left:'+newPosPercent+'%');
+	}
+}
+
 
 /*
 	The purpose of this class is to manage bookmarking.  It saves/loads bookmarks in a cookie
@@ -177,13 +223,14 @@ class liberator_bookmarker {
 
 	//this function can be called by consumers to start auto-bookmarking
 	// if it's called before getSavedBookmarkChar, it could overwrite initial value
-	initBookmarking(contentElement, offsetFunction) {
+	initBookmarking(contentElement, offsetFunction, updateFunction) {
 
 		this.contentEl = contentElement;
 		this.scrollEl = contentElement.parentElement;
 		this.bookmarkEl = document.createElement('div');
 		this.bookmarkEl.id = "bookmark";
 		this.offsetFunction = offsetFunction;
+		this.updateFunction = updateFunction;
 
 		var bookmarkerInstance = this;
 		this.bookmarkInterval = setInterval( function(){ 
@@ -330,13 +377,17 @@ class liberator_bookmarker {
 		}
 		//POST: charCount includes all chars before bookmarkNode 
 
+		//update UI
 		this.addBookmarkElement(bookmarkNode.offsetTop);
+		this.updateFunction(charCount);
 
+		//save data to backend
 		var theReader = HELPERS.findGetParameter('reader');
 		if( theReader ) {
 			console.log('bookmarking at char: '+charCount);
 			this.libClient.setBookmarkForReader(theReader, charCount);
 		}
+
 	}
 
 	addBookmarkElement(topPx) {
@@ -397,7 +448,7 @@ class liberator_client {
 			})
 			.catch(function(error) {
 				console.log(error)
-				throw error;
+				//throw error;
 			});
 	}
 
@@ -410,19 +461,19 @@ class liberator_client {
 			})
 			.catch(function(error) {
 				console.log(error)
-				throw error;
+				//throw error;
 			});
 	}
 
 	getBookStylesheet() {
 		var cssURL = this.bookURL+'/css/idGeneratedStyles.css'
 		return fetch(cssURL)
-		.then( resp => resp.text() )
-		.then( text => {
-			return text;
-		}).catch( function(error) {
-			console.log(error);
-		})
+			.then( resp => resp.text() )
+			.then( text => {
+				return text;
+			}).catch( function(error) {
+				console.log(error);
+			})
 	}
 
 	getBookmarkForReader(reader) {
