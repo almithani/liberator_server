@@ -52,7 +52,10 @@ class liberator_book_app {
 				this.bookContentEl.id = "liberator-content";
 				this.bookEl.appendChild(this.bookContentEl);
 
-				this.timeline = new liberator_timeline(this.bookEl, this.lib);
+				this.lib.getBookMeta().then( (totalChars) => {
+					this.timeline = new liberator_timeline(this.bookEl, totalChars);
+					this.timeline.updateTimelineBookmark(bookmarkedChar);
+				});
 
 				var appInstance = this;
 				this.loadPageByChar(bookmarkedChar, function(){ appInstance.initInteractive() });
@@ -167,15 +170,13 @@ class liberator_book_app {
 */
 class liberator_timeline {
 	
-	constructor(bookElement,liberatorClient) {
-		this.libClient = liberatorClient;
+	constructor(bookElement,totalBookChars) {
 		this.bookEl = bookElement;
+		this.totalChars = totalBookChars;
 
 		//initialized in init function
 		this.timelineEl = null; 
 		this.bookmarkEl = null;
-
-		this.TOTAL_CHARS = 655637; //this is hardcoded Killer Angels for now
 
 		this.init();
 	}
@@ -186,11 +187,14 @@ class liberator_timeline {
 
 		this.bookmarkEl = document.createElement('div');
 		this.bookmarkEl.className = "bookmark";
+		//set hidden until updateTimelineBookmark is called
+		this.bookmarkEl.setAttribute('style', 'display:none');
 		
 		var bookmarkLabelEl = document.createElement('div');
 		bookmarkLabelEl.className = "label";
 		var theReader = HELPERS.findGetParameter('reader');
 		bookmarkLabelEl.innerHTML = theReader ? theReader : "you";
+
 
 		this.bookmarkEl.append(bookmarkLabelEl);
 		this.timelineEl.append(this.bookmarkEl);
@@ -198,7 +202,7 @@ class liberator_timeline {
 	}
 
 	updateTimelineBookmark(newBookmarkChar) {
-		var newPosPercent = newBookmarkChar/this.TOTAL_CHARS*100;
+		var newPosPercent = newBookmarkChar/this.totalChars*100;
 		this.bookmarkEl.setAttribute('style', 'left:'+newPosPercent+'%');
 	}
 }
@@ -482,6 +486,22 @@ class liberator_client {
 			})
 	}
 
+	getBookMeta() {
+		return fetch(this.apiURL+"/"+this.bookRoot+"/api/bookmeta")
+			.then( resp => resp.json() )
+			.then( body => {
+				if( body.status=="OK" && body.total_chars ) {
+					return body.total_chars;
+				} else {
+					return 0;
+				}
+			})
+			.catch(function(error) {
+				console.log(error)
+				//throw error;
+			});
+	}
+
 	getBookmarkForReader(reader) {
 		return fetch(this.apiURL+"/"+this.bookRoot+'/api/bookmark?reader='+reader)
 			.then( resp => resp.json() )
@@ -494,7 +514,7 @@ class liberator_client {
 			})
 			.catch(function(error) {
 				console.log(error)
-				throw error;
+				//throw error;
 			});
 	}
 
