@@ -10,6 +10,7 @@ OUTPUT_PATH = './output/'
 XHTML_PATH = 'xhtml/'
 IMAGE_PATH = 'image/'
 CSS_PATH = 'css/'
+CSS_SHARED_OUTPUT_FILENAME = "bookStyles.css"
 BOOK_META_FILENAME = "book.meta"
 
 VISIBLE_CHARS_PER_FILE = 30000
@@ -50,7 +51,8 @@ def unpack(file):
 			save_file_to_output_dir( book_output_path+IMAGE_PATH, os.path.basename(item.get_name()), item.get_content() )
 
 		elif item.get_type()==ebooklib.ITEM_STYLE:
-			save_file_to_output_dir( book_output_path+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
+			append_content_to_shared_output_file(book_output_path+CSS_PATH, CSS_SHARED_OUTPUT_FILENAME, item.get_content())
+			#save_file_to_output_dir( book_output_path+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
 
 		else: 
 			#print(item.get_type())
@@ -75,6 +77,13 @@ def save_file_to_output_dir(output_path:str, filename:str, content: BytesIO):
 	file = open(output_path+filename, 'wb') 
 	file.write(content)
 	file.close()
+
+
+def append_content_to_shared_output_file(output_path:str, filename:str, content: bytes):
+	create_if_not_exists_output_dir(output_path)
+	file = open(output_path+filename, 'ab')
+	file.write(content)
+	file.close() 
 
 
 def strip_unwanted_tags(body_content: BytesIO):
