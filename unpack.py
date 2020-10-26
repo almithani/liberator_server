@@ -10,6 +10,7 @@ OUTPUT_PATH = './output/'
 XHTML_PATH = 'xhtml/'
 IMAGE_PATH = 'image/'
 CSS_PATH = 'css/'
+BOOK_META_FILENAME = "book.meta"
 
 VISIBLE_CHARS_PER_FILE = 30000
 MARKUP_START_CHAR = b'<'
@@ -20,12 +21,11 @@ TAB_CHAR = b'	'
 current_file_to_write = None
 current_file_number = 0
 current_file_chars = 0
+total_chars_processed = 0
 
 @click.command()
 @click.argument('file')
 def unpack(file):
-
-	
 
 	#parse the epub contents
 	reader = EpubReader(file)
@@ -56,7 +56,18 @@ def unpack(file):
 			#print(item.get_type())
 			pass
 
+	write_book_meta(book_output_path)
 	return
+
+
+def write_book_meta(output_path:str):
+	global BOOK_META_FILENAME
+	global total_chars_processed 
+
+	file = open(output_path+BOOK_META_FILENAME, 'w')
+	content = "total_chars : " + str(total_chars_processed)
+	file.write( content )
+	file.close()
 
 
 def save_file_to_output_dir(output_path:str, filename:str, content: BytesIO):
@@ -86,9 +97,10 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 	global MARKUP_END_CHAR
 	global TAB_CHAR
 	global current_file_chars 
+	global total_chars_processed 
 
 	output_file = get_output_file(book_output_path)
-	total_chars_processed = 0
+	total_file_chars_processed = 0
 
 	in_markup_tag = False
 	char = byte_stream.read(1)
@@ -112,7 +124,7 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 		if not in_markup_tag:
 			#print(char.decode("ISO-8859-1"), end="", flush=True)
 			current_file_chars += 1	
-			total_chars_processed += 1
+			total_file_chars_processed += 1
 
 		#if the file is maxed out, open a new one
 		if current_file_chars >= VISIBLE_CHARS_PER_FILE:
@@ -121,7 +133,9 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 
 		char = byte_stream.read(1)
 
-	#print("this file has: %i visible chars" % total_chars_processed)
+	#keep tally of the # of chars processed
+	#print("this file has: %i visible chars" % total_file_chars_processed)
+	total_chars_processed = total_chars_processed + total_file_chars_processed
 	return
 
 
