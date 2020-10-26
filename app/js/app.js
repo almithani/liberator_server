@@ -472,7 +472,7 @@ class liberator_client {
 	}
 
 	getBookStylesheet() {
-		var cssURL = this.bookURL+'/css/idGeneratedStyles.css'
+		var cssURL = this.bookURL+'/css/bookStyles.css'
 		return fetch(cssURL)
 			.then( resp => resp.text() )
 			.then( text => {
