@@ -54,8 +54,12 @@ class liberator_book_app {
 				this.bookContentEl.id = "liberator-content";
 				this.bookEl.appendChild(this.bookContentEl);
 
-				this.lib.getBookMeta().then( (totalChars) => {
-					this.timeline = new liberator_timeline(this.bookEl, totalChars);
+				var totalChars;
+				this.lib.getBookMeta().then( (_totalChars) => {
+					totalChars = _totalChars;
+					return this.lib.getAllBookmarks();
+				}).then( (allBookmarks) => {
+					this.timeline = new liberator_timeline(this.bookEl, totalChars, allBookmarks);
 					this.timeline.updateTimelineBookmark(bookmarkedChar);
 				});
 
@@ -172,9 +176,14 @@ class liberator_book_app {
 */
 class liberator_timeline {
 	
-	constructor(bookElement,totalBookChars) {
+	constructor(bookElement,totalBookChars,allBookmarksList) {
+
 		this.bookEl = bookElement;
 		this.totalChars = totalBookChars;
+
+		var theReader = HELPERS.findGetParameter('reader');
+		delete allBookmarksList[theReader];
+		this.otherBookmarks = allBookmarksList;
 
 		//initialized in init function
 		this.timelineEl = null; 
@@ -187,25 +196,48 @@ class liberator_timeline {
 		this.timelineEl = document.createElement('div');
 		this.timelineEl.id = "timeline";
 
-		this.bookmarkEl = document.createElement('div');
-		this.bookmarkEl.className = "bookmark";
+		//add other bookmarks first
+		for (let reader in this.otherBookmarks) {
+			var otherBookmarkEl = this.createBookmarkElement(reader, this.otherBookmarks[reader]);
+			this.timelineEl.append(otherBookmarkEl);
+		}
+
+		var theReader = HELPERS.findGetParameter('reader');
+		var curReader = theReader ? theReader : "you";
+		this.bookmarkEl = this.createBookmarkElement(curReader, 0);
 		//set hidden until updateTimelineBookmark is called
 		this.bookmarkEl.setAttribute('style', 'display:none');
-		
-		var bookmarkLabelEl = document.createElement('div');
-		bookmarkLabelEl.className = "label";
-		var theReader = HELPERS.findGetParameter('reader');
-		bookmarkLabelEl.innerHTML = theReader ? theReader : "you";
+		this.timelineEl.append(this.bookmarkEl);
 
-
-		this.bookmarkEl.append(bookmarkLabelEl);
+		//this.bookmarkEl.append(bookmarkLabelEl);
 		this.timelineEl.append(this.bookmarkEl);
 		this.bookEl.append(this.timelineEl);
 	}
 
+
+	createBookmarkElement(reader, currentChars) {
+		var bookmarkEl = document.createElement('div');
+		bookmarkEl.className = "bookmark";
+		bookmarkEl.setAttribute('style', this.getBookmarkPositionStyle(currentChars));
+
+		var bookmarkLabelEl = document.createElement('div');
+		bookmarkLabelEl.className = "label";
+		bookmarkLabelEl.innerHTML = reader;
+		bookmarkEl.append(bookmarkLabelEl);
+
+		return bookmarkEl;
+	}
+
+	getPercentDone(currentChar) {
+		return currentChar/this.totalChars*100;
+	}
+
+	getBookmarkPositionStyle(currentChar) {
+		return 'left:'+this.getPercentDone(currentChar)+'%';
+	}
+
 	updateTimelineBookmark(newBookmarkChar) {
-		var newPosPercent = newBookmarkChar/this.totalChars*100;
-		this.bookmarkEl.setAttribute('style', 'left:'+newPosPercent+'%');
+		this.bookmarkEl.setAttribute('style', this.getBookmarkPositionStyle(newBookmarkChar));
 	}
 }
 
@@ -496,6 +528,22 @@ class liberator_client {
 					return body.total_chars;
 				} else {
 					return 0;
+				}
+			})
+			.catch(function(error) {
+				console.log(error)
+				//throw error;
+			});
+	}
+
+	getAllBookmarks() {
+		return fetch(this.apiURL+"/"+this.bookRoot+"/api/allBookmarks")
+			.then( resp => resp.json() )
+			.then( body => {
+				if( body.status=="OK" && body.bookmarks ) {
+					return body.bookmarks;
+				} else {
+					return {};
 				}
 			})
 			.catch(function(error) {
