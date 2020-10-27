@@ -209,8 +209,6 @@ class liberator_timeline {
 		this.bookmarkEl.setAttribute('style', 'display:none');
 		this.timelineEl.append(this.bookmarkEl);
 
-		//this.bookmarkEl.append(bookmarkLabelEl);
-		this.timelineEl.append(this.bookmarkEl);
 		this.bookEl.append(this.timelineEl);
 	}
 
