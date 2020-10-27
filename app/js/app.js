@@ -34,9 +34,11 @@ class liberator_book_app {
 		this.timeline = null; //initialized in init
 
 		this.isLoadingPage = false;
+
+		this.initUI();
 	}
 
-	init() {
+	initUI() {
 
 		this.bookmarker.getSavedBookmarkChar().then( (bookmarkedChar) => {
 			this.lib.getBookStylesheet().then( (styles) => {
@@ -67,7 +69,7 @@ class liberator_book_app {
 		this.setUpScrollEventHandler();
 
 		var appInstance = this;
-		this.bookmarker.initBookmarking(
+		this.bookmarker.startBookmarking(
 			this.bookContentEl, 
 			function() { 
 				return appInstance.getBookmarkCharOffset(appInstance.pages);
@@ -178,10 +180,10 @@ class liberator_timeline {
 		this.timelineEl = null; 
 		this.bookmarkEl = null;
 
-		this.init();
+		this.initUI();
 	}
 
-	init() {
+	initUI() {
 		this.timelineEl = document.createElement('div');
 		this.timelineEl.id = "timeline";
 
@@ -222,7 +224,7 @@ class liberator_bookmarker {
 		this.savedBookmarkChar = undefined;
 		this.getSavedBookmarkChar(); //we call this for the side effect
 
-		//these will be initialized in initBookmarking
+		//these will be initialized in startBookmarking
 		this.contentEl = null;
 		this.scrollEl = null;
 		this.bookmarkEl = null;
@@ -233,7 +235,7 @@ class liberator_bookmarker {
 
 	//this function can be called by consumers to start auto-bookmarking
 	// if it's called before getSavedBookmarkChar, it could overwrite initial value
-	initBookmarking(contentElement, offsetFunction, updateFunction) {
+	startBookmarking(contentElement, offsetFunction, updateFunction) {
 
 		this.contentEl = contentElement;
 		this.scrollEl = contentElement.parentElement;
