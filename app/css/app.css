@@ -47,6 +47,31 @@ html {
 	font-family: Arial, Helvetica, sans-serif;
 }
 
+#timeline .bookmark.color0,
+#timeline .bookmark.color0 .label {
+	background: #81DAF5; /* light blue */
+}
+
+#timeline .bookmark.color1,
+#timeline .bookmark.color1 .label {
+	background: #F5A9A9; /* light red */
+}
+
+#timeline .bookmark.color2,
+#timeline .bookmark.color2 .label {
+	background: #F5DA81; /* light yellow */
+}
+
+#timeline .bookmark.color3,
+#timeline .bookmark.color3 .label {
+	background: #9FF781; /* light green */
+}
+
+#timeline .bookmark.color4,
+#timeline .bookmark.color4 .label {
+	background: #D0A9F5; /* light purple */
+}
+
 #liberator-content {
 	position: relative;
 }

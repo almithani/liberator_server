@@ -178,6 +178,9 @@ class liberator_timeline {
 	
 	constructor(bookElement,totalBookChars,allBookmarksList) {
 
+		//the number of "#timeline .bookmark.color" classes in the css
+		this.NUM_BOOKMARK_COLOURS = 5;
+
 		this.bookEl = bookElement;
 		this.totalChars = totalBookChars;
 
@@ -197,9 +200,11 @@ class liberator_timeline {
 		this.timelineEl.id = "timeline";
 
 		//add other bookmarks first
+		var bookmarkIndex = 0;
 		for (let reader in this.otherBookmarks) {
-			var otherBookmarkEl = this.createBookmarkElement(reader, this.otherBookmarks[reader]);
+			var otherBookmarkEl = this.createBookmarkElement(reader, this.otherBookmarks[reader],bookmarkIndex);
 			this.timelineEl.append(otherBookmarkEl);
+			bookmarkIndex++;
 		}
 
 		var theReader = HELPERS.findGetParameter('reader');
@@ -213,9 +218,12 @@ class liberator_timeline {
 	}
 
 
-	createBookmarkElement(reader, currentChars) {
+	createBookmarkElement(reader, currentChars, bookmarkIndex) {
+
+		var colourClass = bookmarkIndex % this.NUM_BOOKMARK_COLOURS;
+
 		var bookmarkEl = document.createElement('div');
-		bookmarkEl.className = "bookmark";
+		bookmarkEl.className = "bookmark color"+colourClass;
 		bookmarkEl.setAttribute('style', this.getBookmarkPositionStyle(currentChars));
 
 		var bookmarkLabelEl = document.createElement('div');
