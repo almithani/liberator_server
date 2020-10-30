@@ -14,6 +14,16 @@ var HELPERS = {
 			if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
 		}
 		return result;
+	},
+
+	//"borrowed" from here: https://stackoverflow.com/a/49224652
+	getCookie(name) {
+		let cookie = {};
+		document.cookie.split(';').forEach(function(el) {
+			let [k,v] = el.split('=');
+			cookie[k.trim()] = v;
+		})
+		return cookie[name];
 	}
 }
 
@@ -25,20 +35,27 @@ class liberator_book_app {
 
 	constructor(targetElementId, bookURL){ 
 		this.bookEl = document.getElementById(targetElementId);
+		this.reader = this.getAndSaveReader();
+
+		this.lib = new liberator_client("http://books.liberator.me", bookURL);
+		this.bookmarker = new liberator_bookmarker(this.lib, this.reader);
+		this.timeline = null; //initialized in init
 
 		/* all of these will be initialized in initUI */
 		this.bookContentEl = null;	
 		this.pages = null;
 		this.curPageNum = 0;
-		this.totalBookChars = 0;
-
-		this.lib = new liberator_client("http://books.liberator.me", bookURL);
-		this.bookmarker = new liberator_bookmarker(this.lib);
-		this.timeline = null; //initialized in init
-
 		this.isLoadingPage = false;
 
 		this.initUI();
+	}
+
+	getAndSaveReader() {
+		// reader in URL param trumps reader in cookie
+		var theReader = HELPERS.findGetParameter('reader');
+		if( !theReader ) theReader = HELPERS.getCookie('reader');
+		if( theReader && theReader.length > 0 ) document.cookie = "reader="+theReader;
+		return theReader;
 	}
 
 	initUI() {
@@ -58,12 +75,13 @@ class liberator_book_app {
 				this.bookEl.appendChild(this.bookContentEl);
 
 				//set up bookmeta data
+				var totalChars = 0;
 				this.lib.getBookMeta().then( (_totalChars) => {
 					this.pages = Array( Math.ceil(_totalChars/CHARS_PER_PAGE) );
-					this.totalBookChars = _totalChars;
+					totalChars = _totalChars;
 					return this.lib.getAllBookmarks();
 				}).then( (allBookmarks) => {
-					this.timeline = new liberator_timeline(this.bookEl, this.totalBookChars, allBookmarks);
+					this.timeline = new liberator_timeline(this.bookEl, this.reader, totalChars, allBookmarks);
 					this.timeline.updateTimelineBookmark(bookmarkedChar);
 				});
 
@@ -90,11 +108,18 @@ class liberator_book_app {
 		this.bookEl.scrollTop = curBookmarkOffset;
 	}
 
-	getBookmarkCharOffset(pageSparseArray) {
+	getBookmarkCharOffset(pageArray) {
 		var charOffset=0;
-		for(var i=0; i<pageSparseArray.length; i++) {
-			if( pageSparseArray[i]!=true ) {
+		/*
+			pageArray gets initialized to the # of total pages, and marks loaded pages as TRUE.
+				charOffset is meant to track non-loaded pages BEFORE loaded pages, therefore 
+				it's the number of pages before the first TRUE value
+		*/
+		for(var i=0; i<pageArray.length; i++) {
+			if( pageArray[i]!=true ) {
 				charOffset += CHARS_PER_PAGE;
+			} else {
+				break;
 			}
 		}
 		return charOffset;
@@ -186,16 +211,16 @@ class liberator_book_app {
 */
 class liberator_timeline {
 	
-	constructor(bookElement,totalBookChars,allBookmarksList) {
+	constructor(bookElement,reader,totalBookChars,allBookmarksList) {
 
 		//the number of "#timeline .bookmark.color" classes in the css
 		this.NUM_BOOKMARK_COLOURS = 5;
 
 		this.bookEl = bookElement;
 		this.totalChars = totalBookChars;
+		this.reader = reader;
 
-		var theReader = HELPERS.findGetParameter('reader');
-		delete allBookmarksList[theReader];
+		delete allBookmarksList[this.reader];
 		this.otherBookmarks = allBookmarksList;
 
 		//initialized in init function
@@ -217,8 +242,7 @@ class liberator_timeline {
 			bookmarkIndex++;
 		}
 
-		var theReader = HELPERS.findGetParameter('reader');
-		var curReader = theReader ? theReader : "you";
+		var curReader = this.reader ? this.reader : "you";
 		this.bookmarkEl = this.createBookmarkElement(curReader, 0);
 		//set hidden until updateTimelineBookmark is called
 		this.bookmarkEl.setAttribute('style', 'display:none');
@@ -259,16 +283,16 @@ class liberator_timeline {
 
 
 /*
-	The purpose of this class is to manage bookmarking.  It saves/loads bookmarks in a cookie
+	The purpose of this class is to manage bookmarking.
 
 	PRE: contentElement MUST exist, and must be child to a scrollable parent
 */
 class liberator_bookmarker {
 
-	constructor(liberatorClient){ 
+	constructor(liberatorClient, reader){ 
 		this.libClient = liberatorClient;
+		this.reader = reader;
 
-		this.BOOKMARK_COOKIE_NAME = "curChar";
 		this.savedBookmarkChar = undefined;
 		this.getSavedBookmarkChar(); //we call this for the side effect
 
@@ -301,10 +325,9 @@ class liberator_bookmarker {
 
 	getSavedBookmarkChar() {
 
-		var theReader = HELPERS.findGetParameter('reader');
-		if( this.savedBookmarkChar == undefined && theReader ) {
+		if( this.savedBookmarkChar == undefined && this.reader ) {
 
-			return this.libClient.getBookmarkForReader(theReader).then( char => {
+			return this.libClient.getBookmarkForReader(this.reader).then( char => {
 				console.log("retrieved bookmark char: "+char);
 				this.savedBookmarkChar = char;
 				return char;
@@ -442,10 +465,9 @@ class liberator_bookmarker {
 		this.updateFunction(charCount);
 
 		//save data to backend
-		var theReader = HELPERS.findGetParameter('reader');
-		if( theReader ) {
+		if( this.reader ) {
 			console.log('bookmarking at char: '+charCount);
-			this.libClient.setBookmarkForReader(theReader, charCount);
+			this.libClient.setBookmarkForReader(this.reader , charCount);
 		}
 
 	}
@@ -462,17 +484,6 @@ class liberator_bookmarker {
 			//do nothing
 		}
 		
-	}
-
-
-	//"borrowed" from here: https://stackoverflow.com/a/49224652
-	getCookie(name) {
-		let cookie = {};
-		document.cookie.split(';').forEach(function(el) {
-			let [k,v] = el.split('=');
-			cookie[k.trim()] = v;
-		})
-		return cookie[name];
 	}
 
 }
