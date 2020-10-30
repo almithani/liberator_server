@@ -25,9 +25,12 @@ class liberator_book_app {
 
 	constructor(targetElementId, bookURL){ 
 		this.bookEl = document.getElementById(targetElementId);
-		this.bookContentEl = null;	//we will set this in the init
-		this.pages = Array();
+
+		/* all of these will be initialized in initUI */
+		this.bookContentEl = null;	
+		this.pages = null;
 		this.curPageNum = 0;
+		this.totalBookChars = 0;
 
 		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib);
@@ -54,12 +57,13 @@ class liberator_book_app {
 				this.bookContentEl.id = "liberator-content";
 				this.bookEl.appendChild(this.bookContentEl);
 
-				var totalChars;
+				//set up bookmeta data
 				this.lib.getBookMeta().then( (_totalChars) => {
-					totalChars = _totalChars;
+					this.pages = Array( Math.ceil(_totalChars/CHARS_PER_PAGE) );
+					this.totalBookChars = _totalChars;
 					return this.lib.getAllBookmarks();
 				}).then( (allBookmarks) => {
-					this.timeline = new liberator_timeline(this.bookEl, totalChars, allBookmarks);
+					this.timeline = new liberator_timeline(this.bookEl, this.totalBookChars, allBookmarks);
 					this.timeline.updateTimelineBookmark(bookmarkedChar);
 				});
 
@@ -111,6 +115,9 @@ class liberator_book_app {
 		//don't bother handling this event if it's already being handled.
 		if ( this.isLoadingPage ) return false;
 
+		//don't load if this is the last page
+		if( this.isLastPage(this.curPageNum) ) return false;
+
 		var viewableHeight = this.bookEl.clientHeight;
 		var contentHeight = this.bookEl.scrollHeight;
 		var totalScrolled = this.bookEl.scrollTop;
@@ -120,10 +127,14 @@ class liberator_book_app {
 		//this is a percent that we use to decide to load the next 'page'
 		var NEXT_PAGE_LOAD_THRESHOLD = 1000; 
 
-
 		if ( heightLeft <= NEXT_PAGE_LOAD_THRESHOLD ) {
 			this.loadPageByNum(this.curPageNum+1);
 		}		
+	}
+
+	isLastPage(curPageNum){
+		if( curPageNum>=this.pages.length-1 ) return true;
+		return false;
 	}
 
 	loadPageByNum(pageNum, callback) {
@@ -158,7 +169,6 @@ class liberator_book_app {
 			appInstance.bookContentEl.innerHTML += page.content;
 			appInstance.markPageLoaded(appInstance.curPageNum);
 			appInstance.isLoadingPage = false;
-			console.log('loaded new page');
 
 			if( callback!=null ) {
 				callback();
@@ -497,8 +507,8 @@ class liberator_client {
 				return text;
 			})
 			.catch(function(error) {
-				console.log(error)
-				//throw error;
+				//console.log(error)
+				throw error;
 			});
 	}
 
@@ -510,8 +520,8 @@ class liberator_client {
 				return { content: text, pageNum: pageNum};
 			})
 			.catch(function(error) {
-				console.log(error)
-				//throw error;
+				//console.log(error)
+				throw error;
 			});
 	}
 
