@@ -8,7 +8,7 @@ from io import TextIOBase
 
 OUTPUT_PATH = './output/'
 XHTML_PATH = 'xhtml/'
-IMAGE_PATH = 'image/'
+#IMAGE_PATH = 'image/'
 CSS_PATH = 'css/'
 CSS_SHARED_OUTPUT_FILENAME = "bookStyles.css"
 BOOK_META_FILENAME = "book.meta"
@@ -48,11 +48,10 @@ def unpack(file):
 			process_visible_chars(contents_bytestream, book_output_path)	
 
 		elif item.get_type()==ebooklib.ITEM_IMAGE or item.get_type()==ebooklib.ITEM_COVER:
-			save_file_to_output_dir( book_output_path+IMAGE_PATH, os.path.basename(item.get_name()), item.get_content() )
+			save_file_to_output_dir( book_output_path+os.path.dirname(item.get_name())+'/', os.path.basename(item.get_name()), item.get_content() )
 
 		elif item.get_type()==ebooklib.ITEM_STYLE:
 			append_content_to_shared_output_file(book_output_path+CSS_PATH, CSS_SHARED_OUTPUT_FILENAME, item.get_content())
-			#save_file_to_output_dir( book_output_path+CSS_PATH, os.path.basename(item.get_name()), item.get_content() )
 
 		else: 
 			#print(item.get_type())
