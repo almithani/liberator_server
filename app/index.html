@@ -19,10 +19,19 @@
 	<body>
 
 		<div id="header">
-			<a href="" class="header-brand">Liberator</a>
+			<a href="/" class="header-brand">Liberator</a>
+			<a class="header-cta" href="#">Save your spot</a>
 		</div>
 
 		<div id="book"></div>
+
+		<div id="signup-lightbox" style="display: none;">
+			<div class="signup-lightbox-background"></div>
+			<form>
+				<label>username: </label><input type="text" name="username" />
+				<br/><label>email: </label><input type="text" name="email" />
+			</form>
+		</div>
 
 		<script type="text/javascript">
 			window.onload = function() {
@@ -35,7 +44,8 @@
 				*/
 				var bookURL = HELPERS.findGetParameter("book");
 				if( !bookURL ){ bookURL="Le_Morte_Darthur"; }
-				const app = new liberator_book_app("book", bookURL);
+				const header = new liberator_header("header", "header-cta", "signup-lightbox", "signup-lightbox-background");
+				const app = new liberator_book_app("book", bookURL, header);
 			}
 		</script>
 

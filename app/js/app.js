@@ -33,13 +33,15 @@ var HELPERS = {
 */
 class liberator_book_app {
 
-	constructor(targetElementId, bookURL){ 
-		this.bookEl = document.getElementById(targetElementId);
+	constructor(bookElementId, bookURL, headerInstance){ 
+		this.bookEl = document.getElementById(bookElementId);
 		this.reader = this.getAndSaveReader();
 
 		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib, this.reader);
 		this.timeline = null; //initialized in init
+
+		this.header = headerInstance;
 
 		/* all of these will be initialized in initUI */
 		this.bookContentEl = null;	
@@ -608,5 +610,37 @@ class liberator_client {
 			console.log("Error in saving bookmark: "+error);
 		});
 
+	}
+}
+
+
+class liberator_header {
+	constructor(headerElementId, headerSignupCTAClass, lightboxElementId, lightboxBGClass) {
+		this.$header = $('#'+headerElementId);
+		this.$headerCta = this.$header.children('.'+headerSignupCTAClass);
+		this.$lightbox = $('#'+lightboxElementId);
+		this.$lightboxBG = this.$lightbox.children('.'+lightboxBGClass);
+		console.log(this.$lightboxBG);
+
+		this.initUI();
+	}
+
+	initUI() {
+		this.$lightbox.css('display', 'none');
+		var headerInstance = this;
+		
+		this.$headerCta.click( function() {
+			console.log('click');
+
+			if( headerInstance.$lightbox.css('display')=='none' ) {
+				headerInstance.$lightbox.css('display', 'flex')
+			} else {
+				headerInstance.$lightbox.css('display', 'none')
+			}
+		});
+
+		this.$lightboxBG.click( function() {
+			headerInstance.$lightbox.css('display', 'none');
+		});
 	}
 }
