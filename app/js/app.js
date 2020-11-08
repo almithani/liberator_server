@@ -615,12 +615,13 @@ class liberator_client {
 
 
 class liberator_header {
-	constructor(headerElementId, headerSignupCTAClass, lightboxElementId, lightboxBGClass) {
+	constructor(headerElementId, headerSignupCTAClass, lightboxElementId, lightboxBGClass, lightboxXClass) {
 		this.$header = $('#'+headerElementId);
 		this.$headerCta = this.$header.children('.'+headerSignupCTAClass);
 		this.$lightbox = $('#'+lightboxElementId);
 		this.$lightboxBG = this.$lightbox.children('.'+lightboxBGClass);
-		console.log(this.$lightboxBG);
+		this.$lightboxX = this.$lightbox.find('.'+lightboxXClass);
+		this.$signupForm = this.$lightbox.find('form');
 
 		this.initUI();
 	}
@@ -630,8 +631,6 @@ class liberator_header {
 		var headerInstance = this;
 		
 		this.$headerCta.click( function() {
-			console.log('click');
-
 			if( headerInstance.$lightbox.css('display')=='none' ) {
 				headerInstance.$lightbox.css('display', 'flex')
 			} else {
@@ -639,8 +638,13 @@ class liberator_header {
 			}
 		});
 
-		this.$lightboxBG.click( function() {
+		this.$lightboxBG.add(this.$lightboxX).click( function() {
 			headerInstance.$lightbox.css('display', 'none');
+		});
+
+		this.$signupForm.submit( function(e) {
+			e.preventDefault();
+			console.log('form submit');
 		});
 	}
 }

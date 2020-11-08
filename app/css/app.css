@@ -14,6 +14,38 @@ body {
 	line-height: 1.5;
 }
 
+
+/* reusable elements */
+
+.btn-primary {
+	display: block;
+	margin: 5px auto 0px auto;
+	padding: 10px 0px;
+	width: 100%;
+	text-transform: uppercase;
+	cursor: pointer;
+	border-radius: 3px;
+	color: #444;
+	font-weight: bold;
+	text-decoration: none;
+	text-align: center;
+
+	border: solid 1px #a5c956;
+
+	/* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#cdeb8e+0,a5c956+100;Green+3D+%232 */
+	background: #cdeb8e; /* Old browsers */
+	background: -moz-linear-gradient(top, #cdeb8e 0%, #a5c956 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cdeb8e), color-stop(100%,#a5c956)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top, #cdeb8e 0%,#a5c956 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top, #cdeb8e 0%,#a5c956 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top, #cdeb8e 0%,#a5c956 100%); /* IE10+ */
+	background: linear-gradient(to bottom, #cdeb8e 0%,#a5c956 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cdeb8e', endColorstr='#a5c956',GradientType=0 ); /* IE6-9 */
+}
+
+
+/* specific elements */
+
 #header {
 	background: #777 url('/img/light-aluminum.png') repeat-x;
 	color: #666;
@@ -63,19 +95,58 @@ body {
 }
 
 #signup-lightbox .signup-lightbox-background {
+	position: absolute;
 	width: 100vw;
 	height: 100vh;
 	background: #000;
 	opacity: 70%;
-	position: absolute;
+}
+
+#signup-lightbox .signup-lightbox-x:hover {
+	cursor: pointer;
 }
 
 #signup-lightbox form {
 	position: relative;
 	display: block;
-	width: 50vw;
-	height: 50vh;
+	padding-top: 40px; /* because of the x below */
+	padding-bottom: 40px;
 	background: #fff;
+	min-width: 300px;
+	text-align: center;
+}
+
+#signup-lightbox form .signup-lightbox-x {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	width: 40px;
+	height: 40px;
+	font: bold 2em/40px sans-serif;
+	text-align: center;
+	color: #fff;
+	background: #f00;
+}
+
+#signup-lightbox form label {
+	display: inline-block;
+	width: 40%;
+	text-align: right;
+	padding-right: 1em;
+}
+
+#signup-lightbox form input {
+	display: inline-block;
+	width: 40%;
+	margin-right: 20%;
+	text-align: left;
+}
+
+#signup-lightbox form input[type="submit"] {
+	width: 80%;
+	margin: 0px;
+	text-align: center;
+	margin-top: 1em;
 }
 
 #book {
