@@ -33,15 +33,14 @@ var HELPERS = {
 */
 class liberator_book_app {
 
-	constructor(bookElementId, bookURL, headerInstance){ 
+	constructor(bookElementId, bookURL, headerSelectorsObject){ 
 		this.bookEl = document.getElementById(bookElementId);
 		this.reader = this.getAndSaveReader();
 
 		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib, this.reader);
+		this.header = new liberator_header(this.lib, headerSelectorsObject);
 		this.timeline = null; //initialized in init
-
-		this.header = headerInstance;
 
 		/* all of these will be initialized in initUI */
 		this.bookContentEl = null;	
@@ -492,6 +491,56 @@ class liberator_bookmarker {
 
 
 /*
+	The purpose of this class is to handle UI and behaviour of the header
+	headerSelectorObject is just a blob of selectors used for UI manipulations
+*/
+class liberator_header {
+	constructor(liberatorApiClient, headerSelectorObject) {
+		
+		this.libClient = liberatorApiClient;
+
+		this.$header = $(headerSelectorObject.header);
+		this.$headerCta = $(headerSelectorObject.headerCTA);
+		this.$lightbox = $(headerSelectorObject.lightbox);
+		this.$lightboxBG = $(headerSelectorObject.lightboxBG);
+		this.$lightboxX = $(headerSelectorObject.lightboxX);
+		this.$signupForm = this.$lightbox.find('form');
+
+		this.initUI();
+	}
+
+	initUI() {
+		this.$lightbox.css('display', 'none');
+		var headerInstance = this;
+		
+		this.$headerCta.click( function() {
+			if( headerInstance.$lightbox.css('display')=='none' ) {
+				headerInstance.$lightbox.css('display', 'flex')
+			} else {
+				headerInstance.$lightbox.css('display', 'none')
+			}
+		});
+
+		this.$lightboxBG.add(this.$lightboxX).click( function() {
+			headerInstance.$lightbox.css('display', 'none');
+		});
+
+		this.$signupForm.submit( function(e) {
+			e.preventDefault();
+
+			var $theForm = $(e.target);
+			var username = $theForm.find("input[name='username']").val();
+			var email = $theForm.find("input[name='email']").val();
+			var password = $theForm.find("input[name='password']").val();
+
+			headerInstance.libClient.signup(username,email,password);
+		});
+	}
+}
+
+
+
+/*
 	The purpose of this class is to manage the data to and from the server
 */
 class liberator_client {
@@ -611,40 +660,27 @@ class liberator_client {
 		});
 
 	}
-}
 
-
-class liberator_header {
-	constructor(headerElementId, headerSignupCTAClass, lightboxElementId, lightboxBGClass, lightboxXClass) {
-		this.$header = $('#'+headerElementId);
-		this.$headerCta = this.$header.children('.'+headerSignupCTAClass);
-		this.$lightbox = $('#'+lightboxElementId);
-		this.$lightboxBG = this.$lightbox.children('.'+lightboxBGClass);
-		this.$lightboxX = this.$lightbox.find('.'+lightboxXClass);
-		this.$signupForm = this.$lightbox.find('form');
-
-		this.initUI();
-	}
-
-	initUI() {
-		this.$lightbox.css('display', 'none');
-		var headerInstance = this;
-		
-		this.$headerCta.click( function() {
-			if( headerInstance.$lightbox.css('display')=='none' ) {
-				headerInstance.$lightbox.css('display', 'flex')
-			} else {
-				headerInstance.$lightbox.css('display', 'none')
+	signup(username, email, password) {
+		fetch(
+			'https://api.liberator.me/emails/', 
+			{
+				method: "POST",
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: 'email=' + email + '&username=' + username + '&password=' + password
 			}
-		});
+		).then( resp => {
+			console.log(resp);
+			if( resp.status==201 ) {
+				//all good
+			}
 
-		this.$lightboxBG.add(this.$lightboxX).click( function() {
-			headerInstance.$lightbox.css('display', 'none');
-		});
-
-		this.$signupForm.submit( function(e) {
-			e.preventDefault();
-			console.log('form submit');
+		}).catch(function(error) {
+			console.log(error)
+			console.log("Error in signup up: "+error);
 		});
 	}
 }
+

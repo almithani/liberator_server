@@ -31,6 +31,7 @@
 				<div class="signup-lightbox-x">x</div>
 				<label>username: </label><input type="text" name="username" />
 				<br/><label>email: </label><input type="text" name="email" />
+				<br/><label>password: </label><input type="password" name="password" />
 				<input type="submit" class="btn-primary" value="sign up now" />
 			</form>
 		</div>
@@ -46,8 +47,16 @@
 				*/
 				var bookURL = HELPERS.findGetParameter("book");
 				if( !bookURL ){ bookURL="Le_Morte_Darthur"; }
-				const header = new liberator_header("header", "header-cta", "signup-lightbox", "signup-lightbox-background", "signup-lightbox-x");
-				const app = new liberator_book_app("book", bookURL, header);
+				
+				const headerSelectors = {
+					header: "#header", 
+					headerCTA: "#header .header-cta", 
+					lightbox: "#signup-lightbox", 
+					lightboxBG: "#signup-lightbox .signup-lightbox-background", 
+					lightboxX: "#signup-lightbox .signup-lightbox-x"
+				}
+
+				const app = new liberator_book_app("book", bookURL, headerSelectors);
 			}
 		</script>
 

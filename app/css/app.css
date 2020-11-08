@@ -110,7 +110,7 @@ body {
 	position: relative;
 	display: block;
 	padding-top: 40px; /* because of the x below */
-	padding-bottom: 40px;
+	padding-bottom: 10px;
 	background: #fff;
 	min-width: 300px;
 	text-align: center;
