@@ -663,15 +663,7 @@ class liberator_client {
 
 	signup(username, email, password) {
 
-		/*var _body = {
-					user: {
-						email: email,
-						username: username,
-						password: password
-					}
-				}*/
-		var _body = 'email=' + encodeURI(email) + '&username=' + encodeURI(username) + '&password=' + encodeURI(password);
-		console.log(_body);
+		var status;
 
 		fetch(
 			'https://api.liberator.me/emails/', 
@@ -679,12 +671,21 @@ class liberator_client {
 				method: "POST",
 				headers: {
 					'Content-Type': 'application/x-www-form-urlencoded',
-					//'Content-Type': 'application/json',
 				},
-				body: _body//
+				body: 'email=' + encodeURI(email) + '&username=' + encodeURI(username) + '&password=' + encodeURI(password),
 			}
-		).then( resp => resp.json() )
-		.then( json => {
+		).then( resp => {
+			status = resp.status;
+			return resp.json();
+		}).then( json => {
+
+			if( status==201 ) {
+				console.log('user created')
+			} else {
+				console.log('user not created')
+			}
+
+			console.log(status);
 			console.log(json);
 		}).catch(function(error) {
 			console.log(error)
