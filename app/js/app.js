@@ -666,7 +666,7 @@ class liberator_client {
 		var status;
 
 		fetch(
-			'https://api.liberator.me/emails/', 
+			'https://api.liberator.me/users/', 
 			{
 				method: "POST",
 				headers: {
@@ -679,14 +679,32 @@ class liberator_client {
 			return resp.json();
 		}).then( json => {
 
+			//console.log(status);
+			//console.log(json);
+
 			if( status==201 ) {
 				console.log('user created')
+				return fetch(
+					'https://api.liberator.me/users/login/', 
+					{
+						method: "POST",
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded',
+						},
+						body: 'username=' + encodeURI(username) + '&password=' + encodeURI(password),
+					}
+				)
 			} else {
 				console.log('user not created')
+				throw('user not created')
 			}
-
+		}).then( resp => {
+			status = resp.status;
+			return resp.json();
+		}).then( json => { 
+			console.log('login');
 			console.log(status);
-			console.log(json);
+			console.log(json)
 		}).catch(function(error) {
 			console.log(error)
 			console.log("Error in signup up: "+error);
