@@ -662,21 +662,30 @@ class liberator_client {
 	}
 
 	signup(username, email, password) {
+
+		/*var _body = {
+					user: {
+						email: email,
+						username: username,
+						password: password
+					}
+				}*/
+		var _body = 'email=' + encodeURI(email) + '&username=' + encodeURI(username) + '&password=' + encodeURI(password);
+		console.log(_body);
+
 		fetch(
 			'https://api.liberator.me/emails/', 
 			{
 				method: "POST",
 				headers: {
 					'Content-Type': 'application/x-www-form-urlencoded',
+					//'Content-Type': 'application/json',
 				},
-				body: 'email=' + email + '&username=' + username + '&password=' + password
+				body: _body//
 			}
-		).then( resp => {
-			console.log(resp);
-			if( resp.status==201 ) {
-				//all good
-			}
-
+		).then( resp => resp.json() )
+		.then( json => {
+			console.log(json);
 		}).catch(function(error) {
 			console.log(error)
 			console.log("Error in signup up: "+error);
