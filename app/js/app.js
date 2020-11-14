@@ -504,7 +504,8 @@ class liberator_header {
 		this.$lightbox = $(headerSelectorObject.lightbox);
 		this.$lightboxBG = $(headerSelectorObject.lightboxBG);
 		this.$lightboxX = $(headerSelectorObject.lightboxX);
-		this.$signupForm = this.$lightbox.find('form');
+		this.$signupForm = this.$lightbox.find('form.signup');
+		this.$loginForm = this.$lightbox.find('form.login');
 
 		this.initUI();
 	}
@@ -535,6 +536,32 @@ class liberator_header {
 
 			headerInstance.libClient.signup(username,email,password);
 		});
+
+		this.$loginForm.submit( function(e) {
+			e.preventDefault();
+			headerInstance.handleLoginSubmit();
+		});
+	}
+
+	handleLoginSubmit() {
+		var username = this.$loginForm.find("input[name='username']").val();
+		var password = this.$loginForm.find("input[name='password']").val();
+
+		var headerInstance = this;
+
+		this.libClient.login(username,password).then( function(user) {
+			if( user ) {
+				headerInstance.hideAuthLightbox();
+				headerInstance.$headerCta.html(user.username);
+				headerInstance.$headerCta.unbind("click").click( function(e) {
+					e.preventDefault();
+				});
+			}
+		});
+	}
+
+	hideAuthLightbox() {
+		this.$lightbox.css('display', 'none');
 	}
 }
 
@@ -661,6 +688,31 @@ class liberator_client {
 
 	}
 
+	login(username, password) {
+		return fetch(
+			'https://api.liberator.me/users/login/', 
+			{
+				method: "POST",
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: 'username=' + encodeURI(username) + '&password=' + encodeURI(password),
+			}
+		).then( resp => {
+			status = resp.status;
+			return resp.json();
+		}).then( json => { 
+			console.log(json);
+			if( json.status='ok' )
+				return json.user;
+			
+			return false;
+		}).catch(function(error) {
+			console.log(error)
+			console.log("Error in login: "+error);
+		});
+	}
+
 	signup(username, email, password) {
 
 		var status;
@@ -678,22 +730,8 @@ class liberator_client {
 			status = resp.status;
 			return resp.json();
 		}).then( json => {
-
-			//console.log(status);
-			//console.log(json);
-
 			if( status==201 ) {
-				console.log('user created')
-				return fetch(
-					'https://api.liberator.me/users/login/', 
-					{
-						method: "POST",
-						headers: {
-							'Content-Type': 'application/x-www-form-urlencoded',
-						},
-						body: 'username=' + encodeURI(username) + '&password=' + encodeURI(password),
-					}
-				)
+				//log the user in?
 			} else {
 				console.log('user not created')
 				throw('user not created')

@@ -83,7 +83,7 @@ body {
 	line-height: 30px;
 }
 
-#signup-lightbox {
+#auth-lightbox {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -94,7 +94,7 @@ body {
 	height: 100vh;
 }
 
-#signup-lightbox .signup-lightbox-background {
+#auth-lightbox .auth-lightbox-background {
 	position: absolute;
 	width: 100vw;
 	height: 100vh;
@@ -102,11 +102,11 @@ body {
 	opacity: 70%;
 }
 
-#signup-lightbox .signup-lightbox-x:hover {
+#auth-lightbox .auth-lightbox-x:hover {
 	cursor: pointer;
 }
 
-#signup-lightbox form {
+#auth-lightbox form {
 	position: relative;
 	display: block;
 	padding-top: 40px; /* because of the x below */
@@ -116,7 +116,7 @@ body {
 	text-align: center;
 }
 
-#signup-lightbox form .signup-lightbox-x {
+#auth-lightbox form .auth-lightbox-x {
 	position: absolute;
 	top: 0px;
 	right: 0px;
@@ -128,21 +128,21 @@ body {
 	background: #f00;
 }
 
-#signup-lightbox form label {
+#auth-lightbox form label {
 	display: inline-block;
 	width: 40%;
 	text-align: right;
 	padding-right: 1em;
 }
 
-#signup-lightbox form input {
+#auth-lightbox form input {
 	display: inline-block;
 	width: 40%;
 	margin-right: 20%;
 	text-align: left;
 }
 
-#signup-lightbox form input[type="submit"] {
+#auth-lightbox form input[type="submit"] {
 	width: 80%;
 	margin: 0px;
 	text-align: center;

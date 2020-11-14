@@ -25,14 +25,21 @@
 
 		<div id="book"></div>
 
-		<div id="signup-lightbox" style="display: none;">
-			<div class="signup-lightbox-background"></div>
-			<form action="/signup">
-				<div class="signup-lightbox-x">x</div>
+		<div id="auth-lightbox" style="display: none;">
+			<div class="auth-lightbox-background"></div>
+			<form action="/signup" class="signup">
+				<div class="auth-lightbox-x">x</div>
 				<label>username: </label><input type="text" name="username" />
 				<br/><label>email: </label><input type="text" name="email" />
 				<br/><label>password: </label><input type="password" name="password" />
 				<input type="submit" class="btn-primary" value="sign up now" />
+			</form>
+
+			<form action="/login" class="login">
+				<div class="auth-lightbox-x">x</div>
+				<br/><label>username: </label><input type="text" name="username" />
+				<br/><label>password: </label><input type="password" name="password" />
+				<input type="submit" class="btn-primary" value="login" />
 			</form>
 		</div>
 
@@ -51,9 +58,9 @@
 				const headerSelectors = {
 					header: "#header", 
 					headerCTA: "#header .header-cta", 
-					lightbox: "#signup-lightbox", 
-					lightboxBG: "#signup-lightbox .signup-lightbox-background", 
-					lightboxX: "#signup-lightbox .signup-lightbox-x"
+					lightbox: "#auth-lightbox", 
+					lightboxBG: "#auth-lightbox .auth-lightbox-background", 
+					lightboxX: "#auth-lightbox .auth-lightbox-x"
 				}
 
 				const app = new liberator_book_app("book", bookURL, headerSelectors);
