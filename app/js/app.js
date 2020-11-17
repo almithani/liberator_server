@@ -35,11 +35,11 @@ class liberator_book_app {
 
 	constructor(bookElementId, bookURL, headerSelectorsObject){ 
 		this.bookEl = document.getElementById(bookElementId);
-		this.reader = this.getAndSaveReader();
+		this.reader = this.getReader();
 
 		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib, this.reader);
-		this.header = new liberator_header(this.lib, headerSelectorsObject);
+		this.header = new liberator_header(this.lib, headerSelectorsObject, this.reader, this.updateReader);
 		this.timeline = null; //initialized in init
 
 		/* all of these will be initialized in initUI */
@@ -51,12 +51,19 @@ class liberator_book_app {
 		this.initUI();
 	}
 
-	getAndSaveReader() {
-		// reader in URL param trumps reader in cookie
-		var theReader = HELPERS.findGetParameter('reader');
-		if( !theReader ) theReader = HELPERS.getCookie('reader');
-		if( theReader && theReader.length > 0 ) document.cookie = "reader="+theReader;
-		return theReader;
+	getReader() {
+		return HELPERS.getCookie('reader');
+	}
+
+	updateReader(readerName) {
+		if( readerName && readerName.length > 0 ) {
+			document.cookie = "reader="+readerName;
+			//reload the page so we don't have to keep track of complicated state
+			window.location.reload(true);
+			/*
+			this.bookmarker.updateReader(readerName);
+			this.timeline.updateReader(readerName);*/
+		}
 	}
 
 	initUI() {
@@ -251,7 +258,6 @@ class liberator_timeline {
 
 		this.bookEl.append(this.timelineEl);
 	}
-
 
 	createBookmarkElement(reader, currentChars, bookmarkIndex) {
 
@@ -495,7 +501,7 @@ class liberator_bookmarker {
 	headerSelectorObject is just a blob of selectors used for UI manipulations
 */
 class liberator_header {
-	constructor(liberatorApiClient, headerSelectorObject) {
+	constructor(liberatorApiClient, headerSelectorObject, readerName, updateReaderFunction) {
 		
 		this.libClient = liberatorApiClient;
 
@@ -507,8 +513,11 @@ class liberator_header {
 		this.$signupForm = $(headerSelectorObject.signupForm);
 		this.$loginForm = $(headerSelectorObject.loginForm);
 		this.$toggle = $(headerSelectorObject.formToggle);
+		this.updateReaderFunction = updateReaderFunction;
 
 		this.initUI();
+
+		if( readerName ) this.setReader(readerName);
 	}
 
 	initUI() {
@@ -529,13 +538,7 @@ class liberator_header {
 
 		this.$signupForm.submit( function(e) {
 			e.preventDefault();
-
-			var $theForm = $(e.target);
-			var username = $theForm.find("input[name='username']").val();
-			var email = $theForm.find("input[name='email']").val();
-			var password = $theForm.find("input[name='password']").val();
-
-			headerInstance.libClient.signup(username,email,password);
+			headerInstance.handleSignupSubmit();
 		});
 
 		this.$loginForm.submit( function(e) {
@@ -567,12 +570,36 @@ class liberator_header {
 		this.libClient.login(username,password).then( function(user) {
 			if( user ) {
 				headerInstance.hideAuthLightbox();
-				headerInstance.$headerCta.html(user.username);
-				headerInstance.$headerCta.unbind("click").click( function(e) {
-					e.preventDefault();
-				});
+				headerInstance.updateReader(user.username);
 			}
 		});
+	}
+
+	handleSignupSubmit() {
+		var username = this.$signupForm.find("input[name='username']").val();
+		var email = this.$signupForm.find("input[name='email']").val();
+		var password = this.$signupForm.find("input[name='password']").val();
+
+		var headerInstance = this;
+
+		headerInstance.libClient.signup(username,email,password).then( function(user) {
+			if( user ) {
+				headerInstance.hideAuthLightbox();
+				headerInstance.updateReader(user.username);
+			}
+		});
+	}
+
+	setReader(username) {
+		this.$headerCta.html(username);
+		this.$headerCta.unbind("click").click( function(e) {
+			e.preventDefault();
+		});
+	}
+
+	updateReader(username) {
+		this.setReader(username);
+		this.updateReaderFunction(username);
 	}
 
 	hideAuthLightbox() {
@@ -714,7 +741,6 @@ class liberator_client {
 				body: 'username=' + encodeURI(username) + '&password=' + encodeURI(password),
 			}
 		).then( resp => {
-			status = resp.status;
 			return resp.json();
 		}).then( json => { 
 			console.log(json);
@@ -723,16 +749,12 @@ class liberator_client {
 			
 			return false;
 		}).catch(function(error) {
-			console.log(error)
 			console.log("Error in login: "+error);
 		});
 	}
 
 	signup(username, email, password) {
-
-		var status;
-
-		fetch(
+		return fetch(
 			'https://api.liberator.me/users/', 
 			{
 				method: "POST",
@@ -742,24 +764,17 @@ class liberator_client {
 				body: 'email=' + encodeURI(email) + '&username=' + encodeURI(username) + '&password=' + encodeURI(password),
 			}
 		).then( resp => {
-			status = resp.status;
-			return resp.json();
-		}).then( json => {
-			if( status==201 ) {
-				//log the user in?
+			if( resp.status==201 ) {
+				return resp.json();
 			} else {
-				console.log('user not created')
 				throw('user not created')
 			}
-		}).then( resp => {
-			status = resp.status;
-			return resp.json();
-		}).then( json => { 
-			console.log('login');
-			console.log(status);
-			console.log(json)
+
+		}).then( json => {
+			//the json is just the user
+			return json;
+
 		}).catch(function(error) {
-			console.log(error)
 			console.log("Error in signup up: "+error);
 		});
 	}
