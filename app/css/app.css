@@ -109,11 +109,17 @@ body {
 #auth-lightbox form {
 	position: relative;
 	display: block;
-	padding-top: 40px; /* because of the x below */
+	padding-top: 20px; /* because of the x below */
 	padding-bottom: 10px;
 	background: #fff;
 	min-width: 300px;
 	text-align: center;
+}
+
+#auth-lightbox form .auth-lightbox-header {
+	font-size: 1.25em;
+	font-weight: bold;
+	margin-bottom: 0.5em;
 }
 
 #auth-lightbox form .auth-lightbox-x {
@@ -147,6 +153,17 @@ body {
 	margin: 0px;
 	text-align: center;
 	margin-top: 1em;
+}
+
+#auth-lightbox form .auth-lightbox-toggle,
+#auth-lightbox form .auth-lightbox-toggle:link,
+#auth-lightbox form .auth-lightbox-toggle:hover,
+#auth-lightbox form .auth-lightbox-toggle:active,
+#auth-lightbox form .auth-lightbox-toggle:visited {
+	color: #4d4d4d;
+	text-decoration: underline;
+	display: inline-block;
+	margin-top: 0.5em;
 }
 
 #book {

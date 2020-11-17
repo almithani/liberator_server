@@ -504,8 +504,9 @@ class liberator_header {
 		this.$lightbox = $(headerSelectorObject.lightbox);
 		this.$lightboxBG = $(headerSelectorObject.lightboxBG);
 		this.$lightboxX = $(headerSelectorObject.lightboxX);
-		this.$signupForm = this.$lightbox.find('form.signup');
-		this.$loginForm = this.$lightbox.find('form.login');
+		this.$signupForm = $(headerSelectorObject.signupForm);
+		this.$loginForm = $(headerSelectorObject.loginForm);
+		this.$toggle = $(headerSelectorObject.formToggle);
 
 		this.initUI();
 	}
@@ -540,6 +541,20 @@ class liberator_header {
 		this.$loginForm.submit( function(e) {
 			e.preventDefault();
 			headerInstance.handleLoginSubmit();
+		});
+
+		headerInstance.$signupForm.css("display", "none");
+		this.$toggle.click( function(e) {
+			e.preventDefault();
+
+			if( headerInstance.$signupForm.css("display")=="none" ){
+				headerInstance.$loginForm.css("display", "none");
+				headerInstance.$signupForm.css("display", "block");
+				return true;
+			} 
+
+			headerInstance.$signupForm.css("display", "none");
+			headerInstance.$loginForm.css("display", "block");
 		});
 	}
 

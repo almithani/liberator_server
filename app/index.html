@@ -28,18 +28,22 @@
 		<div id="auth-lightbox" style="display: none;">
 			<div class="auth-lightbox-background"></div>
 			<form action="/signup" class="signup">
+				<div class="auth-lightbox-header">Sign Up</div>
 				<div class="auth-lightbox-x">x</div>
 				<label>username: </label><input type="text" name="username" />
 				<br/><label>email: </label><input type="text" name="email" />
 				<br/><label>password: </label><input type="password" name="password" />
-				<input type="submit" class="btn-primary" value="sign up now" />
+				<br/><input type="submit" class="btn-primary" value="sign up now" />
+				<br/><a href="#" class="auth-lightbox-toggle">log in to your account</a>
 			</form>
 
 			<form action="/login" class="login">
+				<div class="auth-lightbox-header">Login</div>
 				<div class="auth-lightbox-x">x</div>
-				<br/><label>username: </label><input type="text" name="username" />
+				<label>username: </label><input type="text" name="username" />
 				<br/><label>password: </label><input type="password" name="password" />
-				<input type="submit" class="btn-primary" value="login" />
+				<br/><input type="submit" class="btn-primary" value="login" />
+				<br/><a href="#" class="auth-lightbox-toggle">sign up for an account</a>
 			</form>
 		</div>
 
@@ -60,7 +64,10 @@
 					headerCTA: "#header .header-cta", 
 					lightbox: "#auth-lightbox", 
 					lightboxBG: "#auth-lightbox .auth-lightbox-background", 
-					lightboxX: "#auth-lightbox .auth-lightbox-x"
+					lightboxX: "#auth-lightbox .auth-lightbox-x",
+					signupForm: "#auth-lightbox form.signup",
+					loginForm: "#auth-lightbox form.login",
+					formToggle: "#auth-lightbox .auth-lightbox-toggle"
 				}
 
 				const app = new liberator_book_app("book", bookURL, headerSelectors);
