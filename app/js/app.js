@@ -39,7 +39,10 @@ class liberator_book_app {
 
 		this.lib = new liberator_client("http://books.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib, this.reader);
-		this.header = new liberator_header(this.lib, headerSelectorsObject, this.reader, this.updateReader);
+		var appInstance = this;
+		this.header = new liberator_header(this.lib, headerSelectorsObject, this.reader, function(readerName) {
+			appInstance.updateReader(readerName); 
+		});
 		this.timeline = null; //initialized in init
 
 		/* all of these will be initialized in initUI */
@@ -58,11 +61,13 @@ class liberator_book_app {
 	updateReader(readerName) {
 		if( readerName && readerName.length > 0 ) {
 			document.cookie = "reader="+readerName;
-			//reload the page so we don't have to keep track of complicated state
-			window.location.reload(true);
-			/*
-			this.bookmarker.updateReader(readerName);
-			this.timeline.updateReader(readerName);*/
+			//save bookmark
+			this.bookmarker.setReader(readerName);
+			var charOffset = this.getBookmarkCharOffset(this.pages);
+			this.bookmarker.bookmarkCurrentLocation(charOffset).then( function() {
+				//reload the page so we don't have to keep track of complicated state
+				window.location.reload(true);
+			});
 		}
 	}
 
@@ -103,7 +108,7 @@ class liberator_book_app {
 		this.setUpScrollEventHandler();
 
 		var appInstance = this;
-		this.bookmarker.startBookmarking(
+		this.bookmarker.startAutoBookmarking(
 			this.bookContentEl, 
 			function() { 
 				return appInstance.getBookmarkCharOffset(appInstance.pages);
@@ -303,7 +308,7 @@ class liberator_bookmarker {
 		this.savedBookmarkChar = undefined;
 		this.getSavedBookmarkChar(); //we call this for the side effect
 
-		//these will be initialized in startBookmarking
+		//these will be initialized in startAutoBookmarking
 		this.contentEl = null;
 		this.scrollEl = null;
 		this.bookmarkEl = null;
@@ -312,9 +317,13 @@ class liberator_bookmarker {
 		
 	}
 
+	setReader(readerName) {
+		this.reader = readerName;
+	}
+
 	//this function can be called by consumers to start auto-bookmarking
 	// if it's called before getSavedBookmarkChar, it could overwrite initial value
-	startBookmarking(contentElement, offsetFunction, updateFunction) {
+	startAutoBookmarking(contentElement, offsetFunction, updateFunction) {
 
 		this.contentEl = contentElement;
 		this.scrollEl = contentElement.parentElement;
@@ -326,7 +335,7 @@ class liberator_bookmarker {
 		var bookmarkerInstance = this;
 		this.bookmarkInterval = setInterval( function(){ 
 			var charOffset = offsetFunction();
-			bookmarkerInstance.updateCharCounter(charOffset); 
+			bookmarkerInstance.bookmarkCurrentLocation(charOffset); 
 		}, 5000);
 	}
 
@@ -416,7 +425,7 @@ class liberator_bookmarker {
 
 	}
 
-	updateCharCounter(charOffset) {
+	bookmarkCurrentLocation(charOffset) {
 
 		this.removeBookmarkElement();
 
@@ -474,9 +483,12 @@ class liberator_bookmarker {
 		//save data to backend
 		if( this.reader ) {
 			console.log('bookmarking at char: '+charCount);
-			this.libClient.setBookmarkForReader(this.reader , charCount);
+			return this.libClient.setBookmarkForReader(this.reader , charCount);
+		} else {
+			return new Promise((resolve, reject) => {
+				resolve(0);
+			});
 		}
-
 	}
 
 	addBookmarkElement(topPx) {
@@ -716,7 +728,7 @@ class liberator_client {
 	}
 
 	setBookmarkForReader(reader, charToBookmark) {
-		fetch(this.apiURL+"/"+this.bookRoot+'/api/bookmark?reader='+reader, {
+		return fetch(this.apiURL+"/"+this.bookRoot+'/api/bookmark?reader='+reader, {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
