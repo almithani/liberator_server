@@ -5,6 +5,7 @@ import os
 from ebooklib.epub import EpubReader
 from io import BytesIO
 from io import TextIOBase
+from pprint import pprint
 
 OUTPUT_PATH = './output/'
 XHTML_PATH = 'xhtml/'
@@ -12,6 +13,7 @@ XHTML_PATH = 'xhtml/'
 CSS_PATH = 'css/'
 CSS_SHARED_OUTPUT_FILENAME = "bookStyles.css"
 BOOK_META_FILENAME = "book.meta"
+BOOK_HTML_SELECTOR = "#book"
 
 VISIBLE_CHARS_PER_FILE = 30000
 MARKUP_START_CHAR = b'<'
@@ -51,7 +53,8 @@ def unpack(file):
 			save_file_to_output_dir( book_output_path+os.path.dirname(item.get_name())+'/', os.path.basename(item.get_name()), item.get_content() )
 
 		elif item.get_type()==ebooklib.ITEM_STYLE:
-			append_content_to_shared_output_file(book_output_path+CSS_PATH, CSS_SHARED_OUTPUT_FILENAME, item.get_content())
+			style_content = descope_css(item.get_content())
+			append_content_to_shared_output_file(book_output_path+CSS_PATH, CSS_SHARED_OUTPUT_FILENAME, style_content)
 
 		else: 
 			#print(item.get_type())
@@ -83,6 +86,21 @@ def append_content_to_shared_output_file(output_path:str, filename:str, content:
 	file = open(output_path+filename, 'ab')
 	file.write(content)
 	file.close() 
+
+
+def descope_css(css_content: BytesIO):
+	css_content = css_content.decode("utf-8")
+
+	# first handle beginning of selector blocks
+	pattern = re.compile("\n*([^;\{\}]+)+\{[\s\S]*?\}")
+	rules_to_scope = pattern.findall(css_content)
+	for rule in rules_to_scope:
+		css_content = re.sub(re.escape(rule), BOOK_HTML_SELECTOR+" "+rule, css_content)
+
+	#then handle all multi-selctor blocks
+	css_content = re.sub(',', ', '+BOOK_HTML_SELECTOR, css_content)
+
+	return str.encode(css_content)
 
 
 def strip_unwanted_tags(body_content: BytesIO):
