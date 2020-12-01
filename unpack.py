@@ -92,18 +92,19 @@ def descope_css(css_content: BytesIO):
 	css_content = css_content.decode("utf-8")
 
 	# first handle beginning of selector blocks
+	# ([^;\{\}]+)+ is 1+ capture of 1+ char words that are NOT ; { or }
+	# \{[\s\S]*?\} matches the actual css rules in {}
+	#	\s\S are needed for newlines (can't use DOTALL because we need newlines for the first rule)
+	#	*? are non-greedy to ensure we aren't capturing "nested" rules
 	pattern = re.compile("\n*([^;\{\}]+)+\{[\s\S]*?\}")
-	rules_to_scope = pattern.findall(css_content)
-
-	#constrict to unique values by casting to set and back
-	rules_to_scope_set = set(rules_to_scope)
-	rules_to_scope = list(rules_to_scope_set)
+	rules_to_scope = pattern.finditer(css_content)
 
 	for rule in rules_to_scope:
-		pprint(rule)
-		pprint(re.escape(rule))
-		pprint('-----')
-		css_content = re.sub(re.escape(rule), BOOK_HTML_SELECTOR+" "+rule, css_content)
+		old_css_selector = rule.group(1)
+		new_css_selector = BOOK_HTML_SELECTOR+" "+old_css_selector
+		old_css_rule = rule.group()
+		new_css_rule = re.sub(re.escape(old_css_selector), new_css_selector, old_css_rule)
+		css_content = re.sub(re.escape(old_css_rule), new_css_rule, css_content)
 
 	#then handle all multi-selctor blocks
 	css_content = re.sub(',', ', '+BOOK_HTML_SELECTOR, css_content)
