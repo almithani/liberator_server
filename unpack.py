@@ -94,7 +94,15 @@ def descope_css(css_content: BytesIO):
 	# first handle beginning of selector blocks
 	pattern = re.compile("\n*([^;\{\}]+)+\{[\s\S]*?\}")
 	rules_to_scope = pattern.findall(css_content)
+
+	#constrict to unique values by casting to set and back
+	rules_to_scope_set = set(rules_to_scope)
+	rules_to_scope = list(rules_to_scope_set)
+
 	for rule in rules_to_scope:
+		pprint(rule)
+		pprint(re.escape(rule))
+		pprint('-----')
 		css_content = re.sub(re.escape(rule), BOOK_HTML_SELECTOR+" "+rule, css_content)
 
 	#then handle all multi-selctor blocks
