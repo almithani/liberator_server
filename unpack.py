@@ -53,9 +53,7 @@ def unpack(file):
 			save_file_to_output_dir( book_output_path+os.path.dirname(item.get_name())+'/', os.path.basename(item.get_name()), item.get_content() )
 
 		elif item.get_type()==ebooklib.ITEM_STYLE:
-			print('descope css')
 			style_content = descope_css(item.get_content())
-			print('append css')
 			append_content_to_shared_output_file(book_output_path+CSS_PATH, CSS_SHARED_OUTPUT_FILENAME, style_content)
 
 		else: 
@@ -94,35 +92,20 @@ def descope_css(css_content: BytesIO):
 	css_content = css_content.decode("utf-8")
 
 	# first handle beginning of selector blocks
-	# ([^;\{\}]+)+ is 1+ capture of 1+ char words that are NOT ; { or }
+	# ([^;\{\}\n]+) is a capture 1+ char word(s)s that are NOT ; { } or \n
 	# \{[\s\S]*?\} matches the actual css rules in {}
 	#	\s\S are needed for newlines (can't use DOTALL because we need newlines for the first rule)
 	#	*? are non-greedy to ensure we aren't capturing "nested" rules
 	#pattern = re.compile("\n*([^;\{\}]+)+\{[\s\S]*?\}")
-	pattern = re.compile("([^;\{\}\n]+)+\{[\s\S]*?\}")
+	pattern = re.compile("([^;\{\}\n]+)\{[\s\S]*?\}")
 	rules_to_scope = pattern.finditer(css_content)
 
-	try:
-		pprint(rules_to_scope)
-	except Exception as err:
-		exception_type = type(err).__name__
-		print(exception_type)
-
-	print('hi')
-
-	try:
-		print('hi2')
-		for rule in rules_to_scope:
-			pprint('hi')
-			pprint(rule.group())
-			old_css_selector = rule.group(1)
-			new_css_selector = BOOK_HTML_SELECTOR+" "+old_css_selector
-			old_css_rule = rule.group()
-			new_css_rule = re.sub(re.escape(old_css_selector), new_css_selector, old_css_rule)
-			css_content = re.sub(re.escape(old_css_rule), new_css_rule, css_content)
-	except Exception as err:
-		exception_type = type(err).__name__
-		print(exception_type)
+	for rule in rules_to_scope:
+		old_css_selector = rule.group(1)
+		new_css_selector = BOOK_HTML_SELECTOR+" "+old_css_selector
+		old_css_rule = rule.group()
+		new_css_rule = re.sub(re.escape(old_css_selector), new_css_selector, old_css_rule)
+		css_content = re.sub(re.escape(old_css_rule), new_css_rule, css_content)
 
 	#then handle all multi-selctor blocks
 	css_content = re.sub(',', ', '+BOOK_HTML_SELECTOR, css_content)
