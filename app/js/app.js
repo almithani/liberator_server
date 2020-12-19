@@ -255,8 +255,7 @@ class liberator_timeline {
 			bookmarkIndex++;
 		}
 
-		var curReader = this.reader ? this.reader : "you";
-		this.bookmarkEl = this.createBookmarkElement(curReader, 0);
+		this.bookmarkEl = this.createBookmarkElement(this.reader, 0, -1);
 		//set hidden until updateTimelineBookmark is called
 		this.bookmarkEl.setAttribute('style', 'display:none');
 		this.timelineEl.append(this.bookmarkEl);
@@ -266,7 +265,7 @@ class liberator_timeline {
 
 	createBookmarkElement(reader, currentChars, bookmarkIndex) {
 
-		var colourClass = bookmarkIndex % this.NUM_BOOKMARK_COLOURS;
+		var colourClass = bookmarkIndex>=0 ? bookmarkIndex % this.NUM_BOOKMARK_COLOURS : "";
 
 		var bookmarkEl = document.createElement('div');
 		bookmarkEl.className = "bookmark color"+colourClass;
@@ -274,9 +273,9 @@ class liberator_timeline {
 
 		var bookmarkLabelEl = document.createElement('div');
 		bookmarkLabelEl.className = "label";
-		bookmarkLabelEl.innerHTML = reader;
+		bookmarkLabelEl.innerHTML = this.getBookmarkText(reader, currentChars);
 		bookmarkEl.append(bookmarkLabelEl);
-
+``
 		return bookmarkEl;
 	}
 
@@ -288,8 +287,15 @@ class liberator_timeline {
 		return 'left:'+this.getPercentDone(currentChar)+'%';
 	}
 
+	getBookmarkText(reader, currentChar) {
+		var curReader = reader ? reader : "you";
+		var curPercent = Math.round(this.getPercentDone(currentChar)*10) / 10;
+		return curReader+":"+curPercent+"%";
+	}
+
 	updateTimelineBookmark(newBookmarkChar) {
 		this.bookmarkEl.setAttribute('style', this.getBookmarkPositionStyle(newBookmarkChar));
+		$(this.bookmarkEl).find(".label").text(this.getBookmarkText(this.reader, newBookmarkChar));
 	}
 }
 
