@@ -291,6 +291,7 @@ class liberator_timeline {
 		var curReader = reader ? reader : "you";
 		var curPercent = Math.round(this.getPercentDone(currentChar)*10) / 10;
 		return curReader+":"+curPercent+"%";
+		
 	}
 
 	updateTimelineBookmark(newBookmarkChar) {
