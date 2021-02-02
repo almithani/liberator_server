@@ -61,13 +61,23 @@ class liberator_book_app {
 	updateReader(readerName) {
 		if( readerName && readerName.length > 0 ) {
 			document.cookie = "reader="+readerName;
-			//save bookmark
-			this.bookmarker.setReader(readerName);
-			var charOffset = this.getBookmarkCharOffset(this.pages);
-			this.bookmarker.bookmarkCurrentLocation(charOffset).then( function() {
-				//reload the page so we don't have to keep track of complicated state
-				window.location.reload(true);
-			});
+			
+			//if there's no saved bookmark, save current location
+			this.lib.getBookmarkForReader(readerName).then( bookmarkedChar => {
+				console.log("current bookmark for "+readerName+": "+bookmarkedChar);
+
+				if( bookmarkedChar==0 ) {
+					var charOffset = this.getBookmarkCharOffset(this.pages);
+					this.lib.setBookmarkForReader(readerName, charOffset).then( function() {
+						//reload the page so we don't have to keep track of complicated state
+						window.location.reload(true);
+					});
+				} else {
+					//reload the page so we don't have to keep track of complicated state
+					window.location.reload(true);
+				}
+			});//this.lib.getBookmarkForReader
+
 		}
 	}
 
@@ -291,7 +301,7 @@ class liberator_timeline {
 		var curReader = reader ? reader : "you";
 		var curPercent = Math.round(this.getPercentDone(currentChar)*10) / 10;
 		return curReader+":"+curPercent+"%";
-		
+
 	}
 
 	updateTimelineBookmark(newBookmarkChar) {
@@ -312,6 +322,7 @@ class liberator_bookmarker {
 		this.libClient = liberatorClient;
 		this.reader = reader;
 
+		//undefined means we haven't tried to get bookmark from server yet
 		this.savedBookmarkChar = undefined;
 		this.getSavedBookmarkChar(); //we call this for the side effect
 
@@ -326,6 +337,8 @@ class liberator_bookmarker {
 
 	setReader(readerName) {
 		this.reader = readerName;
+		//undefined means we haven't tried to get bookmark from server yet
+		this.savedBookmarkChar = undefined;
 	}
 
 	//this function can be called by consumers to start auto-bookmarking
