@@ -60,7 +60,8 @@ class liberator_book_app {
 
 	updateReader(readerName) {
 		if( readerName && readerName.length > 0 ) {
-			document.cookie = "reader="+readerName;
+			//set cookie with 1 yr expiration
+			document.cookie = "reader="+readerName+"; max-age="+365*24*60*60;
 			
 			//if there's no saved bookmark, save current location
 			this.lib.getBookmarkForReader(readerName).then( bookmarkedChar => {
@@ -68,7 +69,9 @@ class liberator_book_app {
 
 				if( bookmarkedChar==0 ) {
 					var charOffset = this.getBookmarkCharOffset(this.pages);
-					this.lib.setBookmarkForReader(readerName, charOffset).then( function() {
+					var metrics = this.bookmarker.getBookmarkMetricsForCurrentLocation(charOffset);
+
+					this.lib.setBookmarkForReader(readerName, metrics.charCount).then( function() {
 						//reload the page so we don't have to keep track of complicated state
 						window.location.reload(true);
 					});
@@ -285,7 +288,7 @@ class liberator_timeline {
 		bookmarkLabelEl.className = "label";
 		bookmarkLabelEl.innerHTML = this.getBookmarkText(reader, currentChars);
 		bookmarkEl.append(bookmarkLabelEl);
-``
+
 		return bookmarkEl;
 	}
 
@@ -449,9 +452,37 @@ class liberator_bookmarker {
 
 		this.removeBookmarkElement();
 
+		var bookmarkMetrics = this.getBookmarkMetricsForCurrentLocation(charOffset);
+
+		//update UI
+		this.addBookmarkElement(bookmarkMetrics.offsetTop);
+		this.updateFunction(bookmarkMetrics.charCount);
+
+		//save data to backend
+		if( this.reader ) {
+			console.log('bookmarking at char: '+bookmarkMetrics.charCount);
+			return this.libClient.setBookmarkForReader(this.reader , bookmarkMetrics.charCount);
+		} else {
+			return new Promise((resolve, reject) => {
+				resolve(0);
+			});
+		}
+	}
+
+	/*
+		returns metrics about the element at the top of the user's view
+		returns an object: 
+			{ 	charCount: # of readable chars before the element, 
+				offsetTop: # of px to the top of the element
+			}
+	*/
+	getBookmarkMetricsForCurrentLocation(charOffset) {
 		if(charOffset==undefined) {
 			charOffset = 0;
 		}
+
+		//if this isn't removed, the charcount will be wrong
+		this.removeBookmarkElement();
 
 		var charIterator = document.createNodeIterator(this.contentEl, NodeFilter.SHOW_ELEMENT);
 		var curNode = charIterator.nextNode(); //this gives us the root node
@@ -494,21 +525,12 @@ class liberator_bookmarker {
 				continue;
 			}
 		}
+
 		//POST: charCount includes all chars before bookmarkNode 
-
-		//update UI
-		this.addBookmarkElement(bookmarkNode.offsetTop);
-		this.updateFunction(charCount);
-
-		//save data to backend
-		if( this.reader ) {
-			console.log('bookmarking at char: '+charCount);
-			return this.libClient.setBookmarkForReader(this.reader , charCount);
-		} else {
-			return new Promise((resolve, reject) => {
-				resolve(0);
-			});
-		}
+		return {
+			charCount: charCount,
+			offsetTop: bookmarkNode.offsetTop
+		};
 	}
 
 	addBookmarkElement(topPx) {
