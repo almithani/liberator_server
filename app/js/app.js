@@ -626,6 +626,8 @@ class liberator_header {
 				headerInstance.hideAuthLightbox();
 				headerInstance.updateReader(user.username);
 			}
+		}).catch(function(error) {
+			headerInstance.handleError(error);
 		});
 	}
 
@@ -641,7 +643,15 @@ class liberator_header {
 				headerInstance.hideAuthLightbox();
 				headerInstance.updateReader(user.username);
 			}
+		}).catch(function(error) {
+			headerInstance.handleError(error);
 		});
+	}
+
+	handleError(errorString) {
+		var errorLists = this.$lightbox.find(".auth-lightbox-errors");
+
+		errorLists.html("<li>"+errorString+"</li>");
 	}
 
 	setReader(username) {
@@ -784,6 +794,7 @@ class liberator_client {
 
 	}
 
+	//catch your own errors on this function!
 	login(username, password) {
 		return fetch(
 			'https://api.liberator.me/users/login/', 
@@ -795,18 +806,23 @@ class liberator_client {
 				body: 'username=' + encodeURI(username) + '&password=' + encodeURI(password),
 			}
 		).then( resp => {
-			return resp.json();
-		}).then( json => { 
-			console.log(json);
-			if( json.status='ok' )
-				return json.user;
+
+			if( resp.status==200 ) {
+				return resp.json();
+			} else if (resp.status==401) {
+				throw('User/pass combination does not match.');
+			} else {
+				throw('User could not be logged in, try again later.');
+			}
+
 			
-			return false;
-		}).catch(function(error) {
-			console.log("Error in login: "+error);
+		}).then( json => { 
+			//assume that we'll always get a user back
+			return json.user;
 		});
 	}
 
+	//catch your own errors on this function!
 	signup(username, email, password) {
 		return fetch(
 			'https://api.liberator.me/users/', 
@@ -818,18 +834,19 @@ class liberator_client {
 				body: 'email=' + encodeURI(email) + '&username=' + encodeURI(username) + '&password=' + encodeURI(password),
 			}
 		).then( resp => {
-			if( resp.status==201 ) {
+			if( resp.status==200 ) {
 				return resp.json();
+			} else if (resp.status==400) {
+				throw('Username, email, or password invalid.');
+			} else if (resp.status==409) {
+				throw('User already exists.');
 			} else {
-				throw('user not created')
+				throw('User not created, try again later.');
 			}
 
 		}).then( json => {
-			//the json is just the user
-			return json;
-
-		}).catch(function(error) {
-			console.log("Error in signup up: "+error);
+			//assume that we'll always get a user back
+			return json.user;
 		});
 	}
 }

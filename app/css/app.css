@@ -106,6 +106,15 @@ body {
 	cursor: pointer;
 }
 
+#auth-lightbox ul.auth-lightbox-errors {
+	color: #F00;
+	font-size: 0.8em;
+}
+
+#auth-lightbox ul.auth-lightbox-errors li:last-child {
+	margin-bottom:0.5em;
+}
+
 #auth-lightbox form {
 	position: relative;
 	display: block;
