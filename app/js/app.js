@@ -37,7 +37,7 @@ class liberator_book_app {
 		this.bookEl = document.getElementById(bookElementId);
 		this.reader = this.getReader();
 
-		this.lib = new liberator_client("http://books.liberator.me", bookURL);
+		this.lib = new liberator_client("http://stagebooks.liberator.me", bookURL);
 		this.bookmarker = new liberator_bookmarker(this.lib, this.reader);
 		var appInstance = this;
 		this.header = new liberator_header(this.lib, headerSelectorsObject, this.reader, function(readerName) {
