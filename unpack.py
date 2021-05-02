@@ -25,6 +25,8 @@ current_file_to_write = None
 current_file_number = 0
 current_file_chars = 0
 total_chars_processed = 0
+book_index_dict = {}
+
 
 @click.command()
 @click.argument('file')
@@ -42,7 +44,7 @@ def unpack(file):
 
 	items = list(book.get_items())
 	for item in items:
-		print('name: '+item.get_name())
+		print('processing file: '+item.get_name())
 
 		if item.get_type()==ebooklib.ITEM_DOCUMENT:
 			contents = 	strip_unwanted_tags(item.get_body_content())
@@ -72,11 +74,17 @@ def unpack(file):
 def write_book_meta(output_path:str):
 	global BOOK_META_FILENAME
 	global total_chars_processed 
+	global book_index_dict
 
 	file = open(output_path+BOOK_META_FILENAME, 'w')
-	content = "total_chars:" + str(total_chars_processed)
+	content = "total_chars:" + str(total_chars_processed) + "\n"
+	
+	for key in book_index_dict:
+		content += str(key)+":"+book_index_dict[key]+"\n"
+
 	file.write( content )
 	file.close()
+	print(book_index_dict)
 
 
 def save_file_to_output_dir(output_path:str, filename:str, content: BytesIO):
@@ -137,13 +145,22 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 	global MARKUP_START_CHAR
 	global MARKUP_END_CHAR
 	global TAB_CHAR
+	
+	# these all have to be global to persist between calls to this function
 	global current_file_chars 
-	global total_chars_processed 
+	global total_chars_processed
+	global book_index_dict
 
 	output_file = get_output_file(book_output_path)
 	total_file_chars_processed = 0
 
-	in_markup_tag = False
+	# we assume that each bytestream is valid HTML so these don't need to persist between bystreams
+	markup_tag_active = False
+	markup_tag_name = None
+	markup_heading_active = False
+	markup_heading_contents = ""
+	markup_heading_charindex = 0
+
 	char = byte_stream.read(1)
 	while char:
 
@@ -156,13 +173,37 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 
 		# determine whether or not we're in markup tags
 		if char == MARKUP_START_CHAR:
-			in_markup_tag = True
+			markup_tag_active = True
+			markup_tag_name = ""
+
 		elif char == MARKUP_END_CHAR:
-			in_markup_tag = False
+			markup_tag_active = False
+
+			#heading tags have special handling so we can hold them in our index
+			match = re.match("(h1|h2|h3|h4|h5|h6)", markup_tag_name, re.IGNORECASE)
+			if match:
+				markup_heading_active = True
+				markup_heading_contents = ""
+				markup_heading_charindex = total_chars_processed + total_file_chars_processed
+
+			match = re.match("(/h1|/h2|/h3|/h4|/h5|/h6)", markup_tag_name, re.IGNORECASE)
+			if match:
+				#-3 because we don't want the trailing close tag contents
+				book_index_dict[markup_heading_charindex] = markup_heading_contents[0:-3]
+				markup_heading_active = False
+
+		if char == MARKUP_START_CHAR or char == MARKUP_END_CHAR:
+			#restart the loop with the next char
 			char = byte_stream.read(1)
 			continue
 
-		if not in_markup_tag:
+		if markup_heading_active:
+			markup_heading_contents += char.decode("ISO-8859-1")
+
+		if markup_tag_active:
+			markup_tag_name += char.decode("ISO-8859-1")
+		else:
+			#if it's not markup, then count it towards our "visible chars" totals
 			#print(char.decode("ISO-8859-1"), end="", flush=True)
 			current_file_chars += 1	
 			total_file_chars_processed += 1
