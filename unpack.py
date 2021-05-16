@@ -196,9 +196,8 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 			#some ebooks use this data type to seaprate chapters (instead of headers)
 			match = re.search(r"epub:type=\"(.*?)\"", markup_tag_name, re.IGNORECASE)
 			if match:
-				print('found an epub tag')
 				charindex = total_chars_processed + total_file_chars_processed
-				book_index_dict[charindex] = match.group(1)
+				book_index_dict[charindex] = "epub-"+match.group(1)
 
 
 		if char == MARKUP_START_CHAR or char == MARKUP_END_CHAR:
