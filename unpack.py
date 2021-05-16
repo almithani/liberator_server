@@ -186,18 +186,27 @@ def process_visible_chars(byte_stream: BytesIO, book_output_path: str):
 				markup_heading_contents = ""
 				markup_heading_charindex = total_chars_processed + total_file_chars_processed
 
+			#this allows us to get the "name" of the header
 			match = re.match("(/h1|/h2|/h3|/h4|/h5|/h6)", markup_tag_name, re.IGNORECASE)
 			if match:
 				#-3 because we don't want the trailing close tag contents
-				book_index_dict[markup_heading_charindex] = markup_heading_contents[0:-3]
+				book_index_dict[markup_heading_charindex] = markup_heading_contents
 				markup_heading_active = False
+
+			#some ebooks use this data type to seaprate chapters (instead of headers)
+			match = re.search(r"epub:type=\"(.*?)\"", markup_tag_name, re.IGNORECASE)
+			if match:
+				print('found an epub tag')
+				charindex = total_chars_processed + total_file_chars_processed
+				book_index_dict[charindex] = match.group(1)
+
 
 		if char == MARKUP_START_CHAR or char == MARKUP_END_CHAR:
 			#restart the loop with the next char
 			char = byte_stream.read(1)
 			continue
 
-		if markup_heading_active:
+		if markup_heading_active and not markup_tag_active:
 			markup_heading_contents += char.decode("ISO-8859-1")
 
 		if markup_tag_active:
