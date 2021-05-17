@@ -1,4 +1,5 @@
 import click
+import json
 import ebooklib
 import re
 import os
@@ -76,13 +77,12 @@ def write_book_meta(output_path:str):
 	global total_chars_processed 
 	global book_index_dict
 
-	file = open(output_path+BOOK_META_FILENAME, 'w')
-	content = "total_chars:" + str(total_chars_processed) + "\n"
-	
-	for key in book_index_dict:
-		content += str(key)+":"+book_index_dict[key]+"\n"
+	output = {}
+	output["total_chars"] = total_chars_processed
+	output["index"] = book_index_dict
 
-	file.write( content )
+	file = open(output_path+BOOK_META_FILENAME, 'w')
+	file.write(json.dumps(output))
 	file.close()
 	print(book_index_dict)
 
@@ -279,6 +279,10 @@ def get_valid_filename(s):
 	'johns_portrait_in_2004.jpg'
 	"""
 	s = str(s).strip().replace(' ', '_')
+	return re.sub(r'(?u)[^-\w.]', '', s)
+
+def get_valid_configvalue(s):
+	s = str(s).strip()
 	return re.sub(r'(?u)[^-\w.]', '', s)
 
 
