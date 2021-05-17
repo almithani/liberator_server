@@ -735,7 +735,7 @@ class liberator_client {
 		return fetch(this.apiURL+"/"+this.bookRoot+"/api/bookmeta")
 			.then( resp => resp.json() )
 			.then( body => {
-				if( body.status=="OK" && body.total_chars ) {
+				if( body.total_chars ) {
 					return body.total_chars;
 				} else {
 					return 0;
