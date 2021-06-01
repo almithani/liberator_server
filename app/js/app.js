@@ -43,9 +43,10 @@ class liberator_book_app {
 		this.header = new liberator_header(this.lib, headerSelectorsObject, this.reader, function(readerName) {
 			appInstance.updateReader(readerName); 
 		});
-		this.timeline = null; //initialized in init
 
 		/* all of these will be initialized in initUI */
+		this.timeline = null; //instance of liberator_timeline
+		this.timeToNext = null; //instance of liberator_timeToNext
 		this.bookContentEl = null;	
 		this.pages = null;
 		this.curPageNum = 0;
@@ -102,12 +103,21 @@ class liberator_book_app {
 
 				//set up bookmeta data
 				var totalChars = 0;
-				this.lib.getBookMeta().then( (_totalChars) => {
+				var headerItems = null;
+				this.lib.getBookMeta().then( (_bookMeta) => {
+					headerItems = _bookMeta.index;
+					var _totalChars = _bookMeta.total_chars;
+					if( !_totalChars ) {
+						_totalChars = 0;
+					}
 					this.pages = Array( Math.ceil(_totalChars/CHARS_PER_PAGE) );
 					totalChars = _totalChars;
+
+					this.timeToNext = new liberator_timeToNext(this.bookEl, headerItems);
+
 					return this.lib.getAllBookmarks();
 				}).then( (allBookmarks) => {
-					this.timeline = new liberator_timeline(this.bookEl, this.reader, totalChars, allBookmarks);
+					this.timeline = new liberator_timeline(this.bookEl, this.reader, totalChars, allBookmarks, headerItems);
 					this.timeline.updateTimelineBookmark(bookmarkedChar);
 				});
 
@@ -128,6 +138,7 @@ class liberator_book_app {
 			},
 			function(newCharCount) {
 				appInstance.timeline.updateTimelineBookmark(newCharCount);
+				appInstance.timeToNext.updateTimeToNext(newCharCount);
 			}
 		);
 		var curBookmarkOffset = this.bookmarker.getBookmarkOffset();
@@ -232,12 +243,72 @@ class liberator_book_app {
 }
 
 /*
+	The purpose of this class is to manage the "time to next stop" functionality
+*/
+
+//used in liberator_timeToNext
+const CHARS_PER_WORD = 5; //https://www.quora.com/What-is-the-average-number-of-letters-for-an-English-word?share=1
+const WORDS_PER_MINUTE = 238; //https://psyarxiv.com/xynwg/
+
+class liberator_timeToNext {
+
+	/*
+		_stopPoints = object w/ [ char => pointType ] sorted by char ascending
+	*/
+	constructor(_bookElement, _stopPoints) {
+
+		this.bookEl = _bookElement;
+		this.stopPoints = _stopPoints;
+
+		//initialized in initUI
+		this.timeToNextEl = null;
+
+		this.initUI();
+	}
+
+	initUI() {
+		this.timeToNextEl = document.createElement('div');
+		this.timeToNextEl.id = "timeToNext";
+		//this.timeToNextEl.innerHTML = "hello world";
+
+		this.bookEl.append(this.timeToNextEl);
+	}
+
+	updateTimeToNext(curChar) {
+
+		var nextPoint = null;
+		var difference = null;
+		for (var char in this.stopPoints ) {
+			
+			if( char >= curChar ) {	
+				nextPoint = this.stopPoints[char];
+				difference = char - curChar;
+				break;	
+			}
+		}
+
+		var timeText = '0 mins';
+		if( nextPoint && difference && difference > 0 ) {
+			var mins_to_next_point = difference/CHARS_PER_WORD/WORDS_PER_MINUTE;
+			if (mins_to_next_point < 1) {
+				timeText = '<1 min';
+			} else {
+				timeText = mins_to_next_point+" mins";
+			}
+		}
+
+		this.timeToNextEl.innerHTML = timeText + " to next point";
+	}
+}
+
+
+/*
 	The purpose of this class is to manage the "timeline" functionality including UI
 		- timeline is a full-book view of bookmarks, etc
 */
 class liberator_timeline {
 	
-	constructor(bookElement,reader,totalBookChars,allBookmarksList) {
+	constructor(bookElement,reader,totalBookChars,allBookmarksList, headers) {
 
 		//the number of "#timeline .bookmark.color" classes in the css
 		this.NUM_BOOKMARK_COLOURS = 5;
@@ -245,6 +316,7 @@ class liberator_timeline {
 		this.bookEl = bookElement;
 		this.totalChars = totalBookChars;
 		this.reader = reader;
+		this.headers = headers; //TODO: display these on the timeline
 
 		delete allBookmarksList[this.reader];
 		this.otherBookmarks = allBookmarksList;
@@ -735,11 +807,7 @@ class liberator_client {
 		return fetch(this.apiURL+"/"+this.bookRoot+"/api/bookmeta")
 			.then( resp => resp.json() )
 			.then( body => {
-				if( body.total_chars ) {
-					return body.total_chars;
-				} else {
-					return 0;
-				}
+				return body;
 			})
 			.catch(function(error) {
 				console.log(error)

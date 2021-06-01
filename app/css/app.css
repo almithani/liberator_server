@@ -184,6 +184,17 @@ body {
 	overflow: scroll;
 } 
 
+#timeToNext {
+	position: fixed;
+	top: 0px;
+	left:0px;
+	height: 40px; /*same as #header height*/
+	line-height: 30px; /* same as .header-cta line-height*/
+	padding: 5px;
+	padding-left: 15px;
+	color: #fff;
+}
+
 #timeline {
 	position: fixed;
 	bottom: 0px;
