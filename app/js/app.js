@@ -118,7 +118,7 @@ class liberator_book_app {
 					return this.lib.getAllBookmarks();
 				}).then( (allBookmarks) => {
 					this.timeline = new liberator_timeline(this.bookEl, this.reader, totalChars, allBookmarks, headerItems);
-					this.timeline.updateTimelineBookmark(bookmarkedChar);
+					this.timeline.updateTimeline(bookmarkedChar);
 				});
 
 				var appInstance = this;
@@ -137,7 +137,7 @@ class liberator_book_app {
 				return appInstance.getBookmarkCharOffset(appInstance.pages);
 			},
 			function(newCharCount) {
-				appInstance.timeline.updateTimelineBookmark(newCharCount);
+				appInstance.timeline.updateTimeline(newCharCount);
 				appInstance.timeToNext.updateTimeToNext(newCharCount);
 			}
 		);
@@ -297,7 +297,7 @@ class liberator_timeToNext {
 			}
 		}
 
-		this.timeToNextEl.innerHTML = timeText + " to next point";
+		this.timeToNextEl.innerHTML = timeText;
 	}
 }
 
@@ -311,7 +311,7 @@ class liberator_timeline {
 	constructor(bookElement,reader,totalBookChars,allBookmarksList, headers) {
 
 		//the number of "#timeline .bookmark.color" classes in the css
-		this.NUM_BOOKMARK_COLOURS = 5;
+		this.NUM_TIMELINE_COLOURS = 5;
 
 		this.bookEl = bookElement;
 		this.totalChars = totalBookChars;
@@ -323,7 +323,7 @@ class liberator_timeline {
 
 		//initialized in init function
 		this.timelineEl = null; 
-		this.bookmarkEl = null;
+		this.progressEl = null;
 
 		this.initUI();
 	}
@@ -332,56 +332,55 @@ class liberator_timeline {
 		this.timelineEl = document.createElement('div');
 		this.timelineEl.id = "timeline";
 
-		//add other bookmarks first
-		var bookmarkIndex = 0;
-		for (let reader in this.otherBookmarks) {
-			var otherBookmarkEl = this.createBookmarkElement(reader, this.otherBookmarks[reader],bookmarkIndex);
-			this.timelineEl.append(otherBookmarkEl);
-			bookmarkIndex++;
-		}
+		this.progressEl = this.createProgressBarElement(this.reader, 0, -1);
+		this.timelineEl.append(this.progressEl);
 
-		this.bookmarkEl = this.createBookmarkElement(this.reader, 0, -1);
-		//set hidden until updateTimelineBookmark is called
-		this.bookmarkEl.setAttribute('style', 'display:none');
-		this.timelineEl.append(this.bookmarkEl);
+		//add other progress bars
+		var progressIndex = 0;
+		for (let reader in this.otherBookmarks) {
+			var otherProgressBar = this.createProgressBarElement(reader, this.otherBookmarks[reader], progressIndex);
+			this.timelineEl.append(otherProgressBar);
+			progressIndex++;
+		}
 
 		this.bookEl.append(this.timelineEl);
 	}
 
-	createBookmarkElement(reader, currentChars, bookmarkIndex) {
+	createProgressBarElement(reader, currentChars, progressIndex) {
+		
+		var colourClass = progressIndex>=0 ? progressIndex % this.NUM_TIMELINE_COLOURS : "";
 
-		var colourClass = bookmarkIndex>=0 ? bookmarkIndex % this.NUM_BOOKMARK_COLOURS : "";
+		var progressBarEl = document.createElement('div');
+		progressBarEl.className = "progressBar"
+		
+		
+		var progressEl = document.createElement('div');
+		progressEl.className = "progress color"+colourClass;
+		$(progressEl).css('width', this.getPercentDone(currentChars)+'%' );
+		progressBarEl.append(progressEl);
 
-		var bookmarkEl = document.createElement('div');
-		bookmarkEl.className = "bookmark color"+colourClass;
-		bookmarkEl.setAttribute('style', this.getBookmarkPositionStyle(currentChars));
+		var labelEl = document.createElement('div');
+		labelEl.className = "label"
+		labelEl.innerHTML = this.getProgressText(reader, currentChars);
+		progressBarEl.append(labelEl);
 
-		var bookmarkLabelEl = document.createElement('div');
-		bookmarkLabelEl.className = "label";
-		bookmarkLabelEl.innerHTML = this.getBookmarkText(reader, currentChars);
-		bookmarkEl.append(bookmarkLabelEl);
-
-		return bookmarkEl;
+		return progressBarEl;
 	}
 
 	getPercentDone(currentChar) {
 		return currentChar/this.totalChars*100;
 	}
 
-	getBookmarkPositionStyle(currentChar) {
-		return 'left:'+this.getPercentDone(currentChar)+'%';
-	}
-
-	getBookmarkText(reader, currentChar) {
+	getProgressText(reader, currentChar) {
 		var curReader = reader ? reader : "you";
 		var curPercent = Math.round(this.getPercentDone(currentChar)*10) / 10;
-		return curReader+":"+curPercent+"%";
+		return curReader+": "+curPercent+"%";
 
 	}
 
-	updateTimelineBookmark(newBookmarkChar) {
-		this.bookmarkEl.setAttribute('style', this.getBookmarkPositionStyle(newBookmarkChar));
-		$(this.bookmarkEl).find(".label").text(this.getBookmarkText(this.reader, newBookmarkChar));
+	updateTimeline(newBookmarkChar) {
+		$(this.progressEl).find(".progress").css('width', this.getPercentDone(newBookmarkChar)+'%' );
+		$(this.progressEl).find(".label").text(this.getProgressText(this.reader, newBookmarkChar));
 	}
 }
 
