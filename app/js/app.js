@@ -293,7 +293,7 @@ class liberator_timeToNext {
 			if (mins_to_next_point < 1) {
 				timeText = '<1 min';
 			} else {
-				timeText = mins_to_next_point+" mins";
+				timeText = Math.ceil(mins_to_next_point)+" mins";
 			}
 		}
 
