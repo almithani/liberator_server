@@ -211,9 +211,8 @@ body {
 
 #timeline .progressBar {
 	width:  100%;
-	height:  18px;
-	padding-top: 1px;
-	padding-bottom: 1px;
+	height:  20px;
+	overflow: hidden;
 }
 
 #timeline .progressBar div {
@@ -227,6 +226,7 @@ body {
 
 #timeline .progressBar .progress {
 	width:  0%;
+	height: 90%;
 }
 
 #timeline .progressBar .label {
