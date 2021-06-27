@@ -24,9 +24,3 @@ This repository is kind of a mess as I haven't spent much time on it.  Don't jud
     * change /site_root/app/js/app.js to point to books.liberator.me instead of stagebooks.liberator.me
     * `service openresty restart`
     * ??? profit ???
-
-### restarting openresty
-It's just like nginx:
-```
-service openresty restart
-```
