@@ -267,3 +267,11 @@ body {
 #liberator-content {
 	position: relative;
 }
+
+#bookmark {
+	background: #FF7700;
+	width: 100%;
+	height: 1px;
+	position: absolute;
+	top: 0px;
+}
