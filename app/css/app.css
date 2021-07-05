@@ -246,6 +246,7 @@ body {
 
 #timeline .progressBar .progress .label {
 	float:  right;
+	/* display:  none; */
 }
 
 /* default "active user" color:  orange */
