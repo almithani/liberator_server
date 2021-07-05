@@ -324,6 +324,7 @@ class liberator_timeline {
 		//initialized in init function
 		this.timelineEl = null; 
 		this.progressEl = null;
+		this.breakListEl = null;
 
 		this.initUI();
 	}
@@ -332,16 +333,24 @@ class liberator_timeline {
 		this.timelineEl = document.createElement('div');
 		this.timelineEl.id = "timeline";
 
+		this.headerListEl = this.createHeaderListElement(this.headers);
+		this.timelineEl.append(this.headerListEl);
+
+		var progressBarContainer = document.createElement('div');
+		progressBarContainer.className = "progressBarContainer";
+
 		this.progressEl = this.createProgressBarElement(this.reader, 0, -1);
-		this.timelineEl.append(this.progressEl);
+		progressBarContainer.append(this.progressEl);
 
 		//add other progress bars
 		var progressIndex = 0;
 		for (let reader in this.otherBookmarks) {
 			var otherProgressBar = this.createProgressBarElement(reader, this.otherBookmarks[reader], progressIndex);
-			this.timelineEl.append(otherProgressBar);
+			progressBarContainer.append(otherProgressBar);
 			progressIndex++;
 		}
+
+		this.timelineEl.append(progressBarContainer);
 
 		this.bookEl.append(this.timelineEl);
 	}
@@ -363,8 +372,28 @@ class liberator_timeline {
 		labelEl.className = "label"
 		labelEl.innerHTML = this.getProgressText(reader, currentChars);
 		progressBarEl.append(labelEl);
+		//clone to progress bar for display purposes
+		progressEl.append(labelEl.cloneNode(true));
 
 		return progressBarEl;
+	}
+
+	createHeaderListElement(headers) {
+
+		var outputEl = document.createElement('div');
+		outputEl.className = "headerList";
+
+		for (var headerCharIndex in headers) {
+			var headerLabel = headers[headerCharIndex];
+
+			var headerEl = document.createElement('div');
+			headerEl.className = "header";
+			$(headerEl).css("left", this.getPercentDone(headerCharIndex)+"%");
+			outputEl.append(headerEl);
+		}
+
+
+		return outputEl;
 	}
 
 	getPercentDone(currentChar) {

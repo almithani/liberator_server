@@ -201,25 +201,31 @@ body {
 	left: 0px;
 	width: 100vw;
 	height: auto;
-	max-height:  60px;
+	max-height:  65px;	/* max-height of .progressBarContainer + padding */
+	padding-top:  5px; /* height of header overhand */
 	margin-left: auto;
 	margin-right: auto;
+	overflow:  hidden;
+}
+
+#timeline .progressBarContainer {
 	background: #eee;
 	overflow-y:  scroll;
 	overflow-x:  hidden;
+	max-height:  60px; /* max-height of #timeline - padding */
 }
 
 #timeline .progressBar {
 	width:  100%;
 	height:  20px;
 	overflow: hidden;
+	position:  relative; /*so it overlaps the headerlist */
 }
 
 #timeline .progressBar div {
 	display:  inline-block;
 	height:  100%;
-	font-size:  0.8em;
-	line-height: 120%;
+	font-size:  10px;
 	vertical-align:  text-top;
 }
 
@@ -230,7 +236,16 @@ body {
 }
 
 #timeline .progressBar .label {
-	padding-left:  5px;
+	padding:  0px 4px;
+	margin: 2px 2px 0px 4px;
+	border-radius:  2px;
+	color:  #fff;
+	background:  #000;
+	height:  75%;
+}
+
+#timeline .progressBar .progress .label {
+	float:  right;
 }
 
 /* default "active user" color:  orange */
@@ -239,29 +254,42 @@ body {
 }
 
 
-#timeline .color0,
-#timeline .color0 .label {
+#timeline .color0 {
 	background: #81DAF5; /* light blue */
 }
 
-#timeline .color1,
-#timeline .color1 .label {
+#timeline .color1 {
 	background: #F5A9A9; /* light red */
 }
 
-#timeline .color2,
-#timeline .color2 .label {
+#timeline .color2 {
 	background: #F5DA81; /* light yellow */
 }
 
-#timeline .color3,
-#timeline .color3 .label {
+#timeline .color3 {
 	background: #9FF781; /* light green */
 }
 
-#timeline .color4,
-#timeline .color4 .label {
+#timeline .color4 {
 	background: #D0A9F5; /* light purple */
+}
+
+#timeline .headerList {
+	position: absolute;
+	top: 0px;
+	left:  0px;
+	width:  100%;
+	height:  120%;
+	overflow:  hidden;
+}
+
+#timeline .headerList .header {
+	position:  absolute;
+	top:  0px;
+	left:  0px;
+	width:  1px;
+	height:  100%;
+	background:  #000;
 }
 
 #liberator-content {
