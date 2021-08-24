@@ -1,0 +1,31 @@
+---
+- name: Copy books from stage->live
+  hosts: all
+  tasks:
+
+    - name: set up tmp directory
+      command: "rm -rf /usr/local/liberator_output_tmp"
+
+    - name: Copy books from stage into tmp directory
+      command: "cp -r /usr/local/liberator_stage/output /usr/local/liberator_output_tmp"
+
+    #need to use shell (not command) here as command seems to choke on the delete
+    - name: Delete bookmarks in tmp
+      shell: 
+        cmd: rm /usr/local/liberator_output_tmp/*/*.bookmark
+
+    - name: Find bookmarks from live 
+      find:
+        paths: /usr/local/liberator/output
+        patterns: "*.bookmark"
+        recurse: yes
+      register: bookmarks
+
+#    - name: Set permissions for copied books
+#      command: "chmod 777 -R /usr/local/liberator_output_tmp"
+
+
+      
+    - name: debug 
+      ansible.builtin.debug:
+        msg: "{{ bookmarks.files }}"
