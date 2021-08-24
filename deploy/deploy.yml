@@ -21,11 +21,21 @@
         recurse: yes
       register: bookmarks
 
-#    - name: Set permissions for copied books
-#      command: "chmod 777 -R /usr/local/liberator_output_tmp"
+    - name: Copy live bookmarks -> tmp  
+      copy:
+        src: "{{ item.path }}"
+        dest: "{{ ( '/usr/local/liberator_output_tmp', item.path|relpath('/usr/local/liberator/output') ) | path_join }}"
+        remote_src: yes
+      loop: "{{ bookmarks.files }}"
 
+    - name: Set permissions for copied books
+      command: "chmod 777 -R /usr/local/liberator_output_tmp"
 
-      
-    - name: debug 
-      ansible.builtin.debug:
-        msg: "{{ bookmarks.files }}"
+    - name: Back up old output directory
+      command: "mv /usr/local/liberator/output /usr/local/liberator/output_bak"
+
+    - name: Deploy new output directory
+      command: "mv /usr/local/liberator_output_tmp /usr/local/liberator/output"
+#    - name: debug 
+#      ansible.builtin.debug:
+#        msg: "{{ bookmarks.files }}"
