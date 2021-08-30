@@ -52,13 +52,20 @@ def unpack(file):
 			contents_bytestream = BytesIO(contents)
 			process_visible_chars(contents_bytestream, book_output_path)	
 
-		elif item.get_type()==ebooklib.ITEM_IMAGE or item.get_type()==ebooklib.ITEM_COVER:
+		elif item.get_type()==ebooklib.ITEM_IMAGE or item.get_type()==ebooklib.ITEM_COVER or item.get_type()==ebooklib.ITEM_FONT:
 			#normal case: books are in different directory than xhtml docs, then keep them in the same path
 			#special case: images are in the same directory as xhtml, then put them in IMAGE_PATH
+			#TODO: this check doesn't ACTUALLY check for the above condition, so it's pretty breakable...
 			if len(os.path.dirname(item.get_name()).strip()) < 1:
 				save_file_to_output_dir( book_output_path+IMAGE_PATH+'/', os.path.basename(item.get_name()), item.get_content() )
 			else:
-				save_file_to_output_dir( book_output_path+os.path.dirname(item.get_name())+'/', os.path.basename(item.get_name()), item.get_content() )
+				#if we have an OEBPS format, strip the OEBPS
+				OEPBS_index = os.path.dirname(item.get_name()).strip().find('OEBPS/')
+				if OEPBS_index > -1:
+					rel_path = IMAGE_PATH+os.path.dirname(item.get_name()).replace('OEBPS/', '')
+					save_file_to_output_dir( book_output_path+rel_path+'/', os.path.basename(item.get_name()), item.get_content() )
+				else:
+					save_file_to_output_dir( book_output_path+os.path.dirname(item.get_name())+'/', os.path.basename(item.get_name()), item.get_content() )
 
 		elif item.get_type()==ebooklib.ITEM_STYLE:
 			style_content = descope_css(item.get_content())
@@ -84,7 +91,7 @@ def write_book_meta(output_path:str):
 	file = open(output_path+BOOK_META_FILENAME, 'w')
 	file.write(json.dumps(output))
 	file.close()
-	print(book_index_dict)
+	#print(book_index_dict)
 
 
 def save_file_to_output_dir(output_path:str, filename:str, content: BytesIO):
